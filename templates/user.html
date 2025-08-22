@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>幸运转盘 - 用户界面</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .wheel-placeholder {
+            width: 300px;
+            height: 300px;
+            border: 5px solid white;
+            border-radius: 50%;
+            margin: 20px auto;
+            background: conic-gradient(
+                #ff6b6b 0deg 30deg,
+                #4ecdc4 30deg 60deg,
+                #45b7d1 60deg 90deg,
+                #96ceb4 90deg 120deg,
+                #feca57 120deg 150deg,
+                #ff9ff3 150deg 180deg,
+                #54a0ff 180deg 210deg,
+                #5f27cd 210deg 240deg,
+                #00d2d3 240deg 270deg,
+                #ff9f43 270deg 300deg,
+                #ee5a52 300deg 330deg,
+                #0abde3 330deg 360deg
+            );
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .wheel-placeholder:hover {
+            transform: scale(1.05);
+        }
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 50%;
+            border: 3px solid #333;
+        }
+        .info {
+            margin: 20px 0;
+            font-size: 1.2em;
+        }
+        .warning {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .link {
+            color: #ffc107;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 幸运转盘 - 用户界面</h1>
+        
+        <div class="wheel-placeholder">
+            <div class="wheel-center"></div>
+        </div>
+        
+        <div class="info">
+            <p>当前玩家: <strong>1</strong></p>
+            <p>剩余次数: <strong>--</strong></p>
+        </div>
+        
+        <div class="warning">
+            <h3>⚠️ 开发模式</h3>
+            <p>您正在使用简化的开发版本。要获得完整功能，请：</p>
+            <ol style="text-align: left; display: inline-block;">
+                <li>运行 <code>build.bat</code> 构建完整版本</li>
+                <li>或确保 <code>static/</code> 目录存在且包含 React 应用</li>
+            </ol>
+        </div>
+        
+        <p><a href="/admin" class="link">管理界面</a></p>
+    </div>
+</body>
+</html>

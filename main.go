@@ -34,6 +34,12 @@ func main() {
 	// Initialize Gin router
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+	
+	// Load HTML templates early for development mode
+	if _, err := os.Stat("templates"); err == nil {
+		r.LoadHTMLGlob("templates/*")
+		fmt.Println("开发模式: 加载HTML模板")
+	}
 
 	// Configure CORS
 	config := cors.DefaultConfig()
@@ -62,6 +68,7 @@ func main() {
 	// Serve static files (React app will be built here)
 	staticPath := "static"
 	if _, err := os.Stat(staticPath); err == nil {
+		fmt.Println("生产模式: 使用React构建文件")
 		// Serve the nested static files from React build
 		r.Static("/static", filepath.Join(staticPath, "static"))
 		// Serve other files directly from static directory
@@ -73,17 +80,38 @@ func main() {
 		r.StaticFile("/user", filepath.Join(staticPath, "index.html"))
 		r.StaticFile("/admin", filepath.Join(staticPath, "index.html"))
 	} else {
+		fmt.Println("开发模式: 使用HTML模板")
 		// Development mode - serve simple placeholder pages
 		r.GET("/", func(c *gin.Context) {
 			c.Redirect(http.StatusFound, "/user")
 		})
-		r.GET("/user", func(c *gin.Context) {
-			c.HTML(http.StatusOK, "user.html", nil)
-		})
-		r.GET("/admin", func(c *gin.Context) {
-			c.HTML(http.StatusOK, "admin.html", nil)
-		})
-		r.LoadHTMLGlob("templates/*")
+		
+		// Check if templates are available before defining HTML routes
+		if _, err := os.Stat("templates"); err == nil {
+			r.GET("/user", func(c *gin.Context) {
+				c.HTML(http.StatusOK, "user.html", nil)
+			})
+			r.GET("/admin", func(c *gin.Context) {
+				c.HTML(http.StatusOK, "admin.html", nil)
+			})
+		} else {
+			// Fallback to JSON responses if no templates
+			fmt.Println("警告: 未找到templates目录，使用JSON响应")
+			r.GET("/user", func(c *gin.Context) {
+				c.JSON(http.StatusOK, gin.H{
+					"message": "开发模式 - 用户界面",
+					"note": "请运行 build.bat 构建完整版本",
+					"admin": "/admin",
+				})
+			})
+			r.GET("/admin", func(c *gin.Context) {
+				c.JSON(http.StatusOK, gin.H{
+					"message": "开发模式 - 管理界面", 
+					"note": "请运行 build.bat 构建完整版本",
+					"user": "/user",
+				})
+			})
+		}
 	}
 
 	// Connect WebSocket to API handlers for broadcasting
