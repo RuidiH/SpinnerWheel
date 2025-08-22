@@ -1,0 +1,36 @@
+# Generated/built files
+/static/
+/spinner-wheel.exe
+*.exe
+
+# Runtime data - contains user-specific configurations and history
+/data/
+
+# Go dependencies
+/vendor/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test files
+*.test
+*.out
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+
+# Go build cache
+.cache/
