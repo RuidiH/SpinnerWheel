@@ -1,212 +1,212 @@
 @echo off
 echo ============================================
-echo 📦 创建部署包
+echo Creating Deployment Package
 echo ============================================
 echo.
 
-:: 检查是否已构建
+:: Check if build is completed
 if not exist "spinner-wheel.exe" (
-    echo ⚠️  未找到 spinner-wheel.exe
-    echo    正在运行构建...
+    echo WARNING: spinner-wheel.exe not found
+    echo          Running build process...
     echo.
     call build.bat
     if %errorlevel% neq 0 (
-        echo ❌ 构建失败，无法创建部署包
+        echo ERROR: Build failed, cannot create deployment package
         pause
         exit /b 1
     )
     echo.
 )
 
-:: 检查必要目录
+:: Check required directories
 if not exist "static" (
-    echo ❌ 未找到 static 目录
-    echo    请先运行 build.bat 构建应用
+    echo ERROR: static directory not found
+    echo        Please run build.bat first to build the application
     pause
     exit /b 1
 )
 
-:: 创建时间戳
+:: Create timestamp
 for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do set "dt=%%a"
 set "YY=%dt:~2,2%" & set "YYYY=%dt:~0,4%" & set "MM=%dt:~4,2%" & set "DD=%dt:~6,2%"
 set "HH=%dt:~8,2%" & set "Min=%dt:~10,2%" & set "Sec=%dt:~12,2%"
 set "timestamp=%YYYY%%MM%%DD%_%HH%%Min%%Sec%"
 
-:: 设置包名称
+:: Set package name
 set "PACKAGE_NAME=SpinnerWheel_Release_%timestamp%"
 set "PACKAGE_DIR=releases\%PACKAGE_NAME%"
 
-echo 📦 包名称: %PACKAGE_NAME%
-echo 📁 输出目录: %PACKAGE_DIR%
+echo Package name: %PACKAGE_NAME%
+echo Output directory: %PACKAGE_DIR%
 echo.
 
-:: 创建发布目录
+:: Create release directory
 if not exist "releases" mkdir releases
 if exist "%PACKAGE_DIR%" (
-    echo 🗑️  清理旧文件...
+    echo Cleaning old files...
     rmdir /s /q "%PACKAGE_DIR%"
 )
 mkdir "%PACKAGE_DIR%"
 
-echo 📋 复制文件...
+echo Copying files...
 
-:: 复制主程序
-echo │  📄 spinner-wheel.exe
+:: Copy main program
+echo   spinner-wheel.exe
 copy spinner-wheel.exe "%PACKAGE_DIR%\"
 
-:: 复制静态文件
-echo │  📁 static\
+:: Copy static files
+echo   static\ directory
 xcopy /E /Y /Q static "%PACKAGE_DIR%\static\" >nul
 
-:: 复制模板文件（可选）
+:: Copy template files (optional)
 if exist "templates" (
-    echo │  📁 templates\
+    echo   templates\ directory
     xcopy /E /Y /Q templates "%PACKAGE_DIR%\templates\" >nul
 )
 
-:: 创建空的 data 目录
-echo │  📁 data\ (空目录)
+:: Create empty data directory
+echo   data\ directory (empty)
 mkdir "%PACKAGE_DIR%\data"
 
-:: 复制配置示例
+:: Copy configuration example
 if exist "config.example.json" (
-    echo │  📄 config.example.json
+    echo   config.example.json
     copy config.example.json "%PACKAGE_DIR%\"
 )
 
-:: 创建运行脚本
-echo │  📄 启动脚本
-echo @echo off > "%PACKAGE_DIR%\启动服务器.bat"
-echo echo ============================================ >> "%PACKAGE_DIR%\启动服务器.bat"
-echo echo 🎯 幸运转盘应用 >> "%PACKAGE_DIR%\启动服务器.bat"
-echo echo ============================================ >> "%PACKAGE_DIR%\启动服务器.bat"
-echo echo. >> "%PACKAGE_DIR%\启动服务器.bat"
-echo echo 🚀 启动服务器... >> "%PACKAGE_DIR%\启动服务器.bat"
-echo echo. >> "%PACKAGE_DIR%\启动服务器.bat"
-echo echo 访问地址: >> "%PACKAGE_DIR%\启动服务器.bat"
-echo echo   用户界面: http://localhost:8080/user >> "%PACKAGE_DIR%\启动服务器.bat"
-echo echo   管理界面: http://localhost:8080/admin >> "%PACKAGE_DIR%\启动服务器.bat"
-echo echo. >> "%PACKAGE_DIR%\启动服务器.bat"
-echo echo 按 Ctrl+C 停止服务器 >> "%PACKAGE_DIR%\启动服务器.bat"
-echo echo. >> "%PACKAGE_DIR%\启动服务器.bat"
-echo spinner-wheel.exe >> "%PACKAGE_DIR%\启动服务器.bat"
-echo pause >> "%PACKAGE_DIR%\启动服务器.bat"
+:: Create startup scripts
+echo   startup scripts
+echo @echo off > "%PACKAGE_DIR%\Start_Server.bat"
+echo echo ============================================ >> "%PACKAGE_DIR%\Start_Server.bat"
+echo echo Spinner Wheel Application >> "%PACKAGE_DIR%\Start_Server.bat"
+echo echo ============================================ >> "%PACKAGE_DIR%\Start_Server.bat"
+echo echo. >> "%PACKAGE_DIR%\Start_Server.bat"
+echo echo Starting server... >> "%PACKAGE_DIR%\Start_Server.bat"
+echo echo. >> "%PACKAGE_DIR%\Start_Server.bat"
+echo echo Access URLs: >> "%PACKAGE_DIR%\Start_Server.bat"
+echo echo   User interface: http://localhost:8080/user >> "%PACKAGE_DIR%\Start_Server.bat"
+echo echo   Admin interface: http://localhost:8080/admin >> "%PACKAGE_DIR%\Start_Server.bat"
+echo echo. >> "%PACKAGE_DIR%\Start_Server.bat"
+echo echo Press Ctrl+C to stop server >> "%PACKAGE_DIR%\Start_Server.bat"
+echo echo. >> "%PACKAGE_DIR%\Start_Server.bat"
+echo spinner-wheel.exe >> "%PACKAGE_DIR%\Start_Server.bat"
+echo pause >> "%PACKAGE_DIR%\Start_Server.bat"
 
-:: 创建不同端口的启动脚本
-echo @echo off > "%PACKAGE_DIR%\启动服务器_9000端口.bat"
-echo echo 🚀 在端口 9000 启动服务器... >> "%PACKAGE_DIR%\启动服务器_9000端口.bat"
-echo echo 访问地址: >> "%PACKAGE_DIR%\启动服务器_9000端口.bat"
-echo echo   用户界面: http://localhost:9000/user >> "%PACKAGE_DIR%\启动服务器_9000端口.bat"
-echo echo   管理界面: http://localhost:9000/admin >> "%PACKAGE_DIR%\启动服务器_9000端口.bat"
-echo echo. >> "%PACKAGE_DIR%\启动服务器_9000端口.bat"
-echo spinner-wheel.exe -port 9000 >> "%PACKAGE_DIR%\启动服务器_9000端口.bat"
-echo pause >> "%PACKAGE_DIR%\启动服务器_9000端口.bat"
+:: Create alternative port startup script
+echo @echo off > "%PACKAGE_DIR%\Start_Server_Port_9000.bat"
+echo echo Starting server on port 9000... >> "%PACKAGE_DIR%\Start_Server_Port_9000.bat"
+echo echo Access URLs: >> "%PACKAGE_DIR%\Start_Server_Port_9000.bat"
+echo echo   User interface: http://localhost:9000/user >> "%PACKAGE_DIR%\Start_Server_Port_9000.bat"
+echo echo   Admin interface: http://localhost:9000/admin >> "%PACKAGE_DIR%\Start_Server_Port_9000.bat"
+echo echo. >> "%PACKAGE_DIR%\Start_Server_Port_9000.bat"
+echo spinner-wheel.exe -port 9000 >> "%PACKAGE_DIR%\Start_Server_Port_9000.bat"
+echo pause >> "%PACKAGE_DIR%\Start_Server_Port_9000.bat"
 
-:: 创建部署说明
-echo │  📄 部署说明.txt
-echo ============================================ > "%PACKAGE_DIR%\部署说明.txt"
-echo 🎯 幸运转盘应用 - 部署包 >> "%PACKAGE_DIR%\部署说明.txt"
-echo ============================================ >> "%PACKAGE_DIR%\部署说明.txt"
-echo. >> "%PACKAGE_DIR%\部署说明.txt"
-echo 📦 包内容: >> "%PACKAGE_DIR%\部署说明.txt"
-echo   - spinner-wheel.exe     主程序 >> "%PACKAGE_DIR%\部署说明.txt"
-echo   - static\               前端资源目录 >> "%PACKAGE_DIR%\部署说明.txt"
-echo   - templates\            开发模式模板（可选） >> "%PACKAGE_DIR%\部署说明.txt"
-echo   - data\                 数据目录（运行时使用） >> "%PACKAGE_DIR%\部署说明.txt"
-echo   - 启动服务器.bat        快速启动脚本 >> "%PACKAGE_DIR%\部署说明.txt"
-echo   - config.example.json   配置文件示例 >> "%PACKAGE_DIR%\部署说明.txt"
-echo. >> "%PACKAGE_DIR%\部署说明.txt"
-echo 🚀 快速启动: >> "%PACKAGE_DIR%\部署说明.txt"
-echo   1. 双击 "启动服务器.bat" >> "%PACKAGE_DIR%\部署说明.txt"
-echo   2. 或双击 "spinner-wheel.exe" >> "%PACKAGE_DIR%\部署说明.txt"
-echo   3. 打开浏览器访问 http://localhost:8080/user >> "%PACKAGE_DIR%\部署说明.txt"
-echo. >> "%PACKAGE_DIR%\部署说明.txt"
-echo 🔧 端口修改: >> "%PACKAGE_DIR%\部署说明.txt"
-echo   命令行运行: spinner-wheel.exe -port 9000 >> "%PACKAGE_DIR%\部署说明.txt"
-echo   或使用: 启动服务器_9000端口.bat >> "%PACKAGE_DIR%\部署说明.txt"
-echo. >> "%PACKAGE_DIR%\部署说明.txt"
-echo 📁 数据文件: >> "%PACKAGE_DIR%\部署说明.txt"
-echo   配置文件: data\config.json >> "%PACKAGE_DIR%\部署说明.txt"
-echo   历史记录: data\history.json >> "%PACKAGE_DIR%\部署说明.txt"
-echo. >> "%PACKAGE_DIR%\部署说明.txt"
-echo 💡 故障排除: >> "%PACKAGE_DIR%\部署说明.txt"
-echo   - 如果端口被占用，使用不同端口启动 >> "%PACKAGE_DIR%\部署说明.txt"
-echo   - 检查防火墙是否阻止程序 >> "%PACKAGE_DIR%\部署说明.txt"
-echo   - 确保有足够的磁盘空间用于数据文件 >> "%PACKAGE_DIR%\部署说明.txt"
-echo. >> "%PACKAGE_DIR%\部署说明.txt"
-echo ⚠️  重要提示: >> "%PACKAGE_DIR%\部署说明.txt"
-echo   - 这是单机版应用，只能在本机访问 >> "%PACKAGE_DIR%\部署说明.txt"
-echo   - 数据文件自动保存在 data\ 目录 >> "%PACKAGE_DIR%\部署说明.txt"
-echo   - 建议定期备份 data\ 目录 >> "%PACKAGE_DIR%\部署说明.txt"
-echo. >> "%PACKAGE_DIR%\部署说明.txt"
-echo 📅 创建时间: %date% %time% >> "%PACKAGE_DIR%\部署说明.txt"
+:: Create deployment instructions
+echo   deployment_instructions.txt
+echo ============================================ > "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo Spinner Wheel Application - Deployment Package >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo ============================================ >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo. >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo Package Contents: >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   - spinner-wheel.exe     Main program >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   - static\               Frontend resources >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   - templates\            Development mode templates (optional) >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   - data\                 Data directory (for runtime use) >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   - Start_Server.bat      Quick startup script >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   - config.example.json   Configuration file example >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo. >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo Quick Start: >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   1. Double-click "Start_Server.bat" >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   2. Or double-click "spinner-wheel.exe" >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   3. Open browser and go to http://localhost:8080/user >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo. >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo Port Configuration: >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   Command line: spinner-wheel.exe -port 9000 >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   Or use: Start_Server_Port_9000.bat >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo. >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo Data Files: >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   Configuration: data\config.json >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   History: data\history.json >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo. >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo Troubleshooting: >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   - If port is in use, try different port >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   - Check firewall if program is blocked >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   - Ensure sufficient disk space for data files >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo. >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo IMPORTANT NOTES: >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   - This is a single-machine application, accessible only locally >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   - Data files are automatically saved in data\ directory >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo   - Recommend regular backup of data\ directory >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo. >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
+echo Created: %date% %time% >> "%PACKAGE_DIR%\Deployment_Instructions.txt"
 
-:: 获取版本信息
-echo │  📊 版本信息
-echo 版本: 1.0.0 > "%PACKAGE_DIR%\版本信息.txt"
-echo 构建时间: %date% %time% >> "%PACKAGE_DIR%\版本信息.txt"
-echo. >> "%PACKAGE_DIR%\版本信息.txt"
+:: Get version information
+echo   version_info.txt
+echo Version: 1.0.0 > "%PACKAGE_DIR%\Version_Info.txt"
+echo Build Date: %date% %time% >> "%PACKAGE_DIR%\Version_Info.txt"
+echo. >> "%PACKAGE_DIR%\Version_Info.txt"
 
-:: 如果有 README，复制它
+:: Copy README if it exists
 if exist "README.md" (
-    echo │  📖 README.md
+    echo   README.md
     copy README.md "%PACKAGE_DIR%\"
 )
 
-echo ✅ 文件复制完成
+echo OK: File copying completed
 echo.
 
-:: 计算包大小
-for /f "usebackq" %%A in (`dir "%PACKAGE_DIR%" /s /-c ^| find "个文件"`) do set "file_count=%%A"
-for /f "usebackq" %%A in (`dir "%PACKAGE_DIR%" /s /-c ^| find "字节"`) do set "total_size=%%A"
+:: Calculate package statistics
+for /f "usebackq" %%A in (`dir "%PACKAGE_DIR%" /s /-c ^| find "File(s)"`) do set "file_count=%%A"
+for /f "usebackq" %%A in (`dir "%PACKAGE_DIR%" /s /-c ^| find "bytes"`) do set "total_size=%%A"
 
-echo 📊 统计信息:
-echo    文件数量: %file_count%
-echo    总大小: %total_size%
+echo Package Statistics:
+echo    File Count: %file_count%
+echo    Total Size: %total_size%
 echo.
 
-:: 创建 ZIP 压缩包（如果有 PowerShell）
-set /p CREATE_ZIP="是否创建 ZIP 压缩包? (y/N): "
+:: Create ZIP archive (if PowerShell is available)
+set /p CREATE_ZIP="Create ZIP archive? (y/N): "
 if /i "%CREATE_ZIP%"=="y" (
     echo.
-    echo 📦 创建 ZIP 压缩包...
+    echo Creating ZIP archive...
     
     powershell -command "Compress-Archive -Path '%PACKAGE_DIR%\*' -DestinationPath 'releases\%PACKAGE_NAME%.zip' -Force" 2>nul
     if %errorlevel% equ 0 (
-        echo ✅ ZIP 创建成功: releases\%PACKAGE_NAME%.zip
+        echo OK: ZIP created successfully: releases\%PACKAGE_NAME%.zip
         
-        :: 询问是否删除文件夹版本
-        set /p DELETE_FOLDER="删除文件夹版本，只保留 ZIP? (y/N): "
+        :: Ask if user wants to delete folder version
+        set /p DELETE_FOLDER="Delete folder version, keep only ZIP? (y/N): "
         if /i "%DELETE_FOLDER%"=="y" (
             rmdir /s /q "%PACKAGE_DIR%"
-            echo ✅ 文件夹版本已删除
+            echo OK: Folder version deleted
         )
     ) else (
-        echo ⚠️  ZIP 创建失败，可能是 PowerShell 版本问题
-        echo    文件夹版本已创建: %PACKAGE_DIR%
+        echo WARNING: ZIP creation failed, possibly due to PowerShell version
+        echo          Folder version available: %PACKAGE_DIR%
     )
 )
 
 echo.
 echo ============================================
-echo 🎉 部署包创建完成！
+echo DEPLOYMENT PACKAGE CREATED SUCCESSFULLY!
 echo ============================================
 echo.
-echo 📍 输出位置:
+echo Output Location:
 if exist "releases\%PACKAGE_NAME%.zip" (
-    echo    📦 ZIP包: releases\%PACKAGE_NAME%.zip
+    echo    ZIP Package: releases\%PACKAGE_NAME%.zip
 )
 if exist "%PACKAGE_DIR%" (
-    echo    📁 文件夹: %PACKAGE_DIR%
+    echo    Folder: %PACKAGE_DIR%
 )
 echo.
-echo 📋 使用说明:
-echo    1. 将部署包复制到目标机器
-echo    2. 解压（如果是ZIP）
-echo    3. 双击 "启动服务器.bat"
-echo    4. 访问 http://localhost:8080/user
+echo Usage Instructions:
+echo    1. Copy deployment package to target machine
+echo    2. Extract (if ZIP)
+echo    3. Double-click "Start_Server.bat"
+echo    4. Access http://localhost:8080/user
 echo.
-echo 📚 详细说明请查看包内的 "部署说明.txt"
+echo For detailed instructions, see "Deployment_Instructions.txt" in the package
 echo.
 
 pause

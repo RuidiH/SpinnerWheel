@@ -1,159 +1,159 @@
 @echo off
 echo ============================================
-echo 🎯 构建幸运转盘应用
+echo Building Spinner Wheel Application
 echo ============================================
 echo.
 
-:: 检查必要工具
-echo 📋 检查构建环境...
+:: Check required tools
+echo [1/5] Checking build environment...
 
-:: 检查 Node.js
+:: Check Node.js
 node --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ 错误: 未找到 Node.js
+    echo ERROR: Node.js not found
     echo.
-    echo 请安装 Node.js 18 或更高版本:
-    echo https://nodejs.org/zh-cn/download/
+    echo Please install Node.js 18 or higher:
+    echo https://nodejs.org/en/download/
     echo.
     pause
     exit /b 1
 )
 
-:: 检查 Go
+:: Check Go
 go version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ 错误: 未找到 Go
+    echo ERROR: Go not found
     echo.
-    echo 请安装 Go 1.21 或更高版本:
+    echo Please install Go 1.21 or higher:
     echo https://go.dev/dl/
     echo.
     pause
     exit /b 1
 )
 
-:: 检查 frontend 目录
+:: Check frontend directory
 if not exist "frontend" (
-    echo ❌ 错误: 未找到 frontend 目录
-    echo 请确保在正确的项目根目录运行此脚本
+    echo ERROR: frontend directory not found
+    echo Please ensure you are running this script from the project root
     pause
     exit /b 1
 )
 
-:: 检查 package.json
+:: Check package.json
 if not exist "frontend\package.json" (
-    echo ❌ 错误: frontend 目录中未找到 package.json
-    echo 请确保 frontend 是一个有效的 React 项目
+    echo ERROR: package.json not found in frontend directory
+    echo Please ensure frontend is a valid React project
     pause
     exit /b 1
 )
 
-echo ✅ 构建环境检查通过
+echo OK: Build environment check passed
 echo.
 
-:: 确保必要目录存在
-echo 📁 创建必要目录...
+:: Ensure necessary directories exist
+echo [2/5] Creating necessary directories...
 if not exist "data" mkdir data
 if not exist "templates" mkdir templates
 if not exist "static" mkdir static
-echo ✅ 目录准备完成
+echo OK: Directories prepared
 echo.
 
-echo ⚡ 开始构建...
+echo [3/5] Starting build process...
 echo.
 
-:: 1. 检查并安装前端依赖
-echo 1️⃣ 检查前端依赖...
+:: 1. Check and install frontend dependencies
+echo Step 1: Checking frontend dependencies...
 cd frontend
 if not exist "node_modules" (
-    echo 📦 首次运行，正在安装依赖...
+    echo Installing dependencies for first time...
     call npm install
     if %errorlevel% neq 0 (
-        echo ❌ 依赖安装失败！
-        echo 请检查网络连接和 npm 配置
+        echo ERROR: Dependency installation failed!
+        echo Please check network connection and npm configuration
         cd ..
         pause
         exit /b 1
     )
-    echo ✅ 依赖安装完成
+    echo OK: Dependencies installed
     echo.
 )
 
-:: 2. 构建前端 React 应用
-echo 2️⃣ 构建前端 React 应用...
+:: 2. Build frontend React application
+echo Step 2: Building frontend React application...
 call npm run build
 if %errorlevel% neq 0 (
-    echo ❌ 前端构建失败！
+    echo ERROR: Frontend build failed!
     echo.
-    echo 常见解决方案:
-    echo - 检查 Node.js 版本是否为 18+
-    echo - 删除 node_modules 目录后重新运行
-    echo - 检查网络连接
+    echo Common solutions:
+    echo - Check Node.js version is 18+
+    echo - Delete node_modules directory and try again
+    echo - Check network connection
     cd ..
     pause
     exit /b 1
 )
-echo ✅ 前端构建完成
+echo OK: Frontend build completed
 echo.
 
-:: 3. 复制前端文件到静态目录
-echo 3️⃣ 复制前端文件到静态目录...
+:: 3. Copy frontend files to static directory
+echo Step 3: Copying frontend files to static directory...
 cd ..
 xcopy /E /Y /Q frontend\build\* static\ >nul
 if %errorlevel% neq 0 (
-    echo ❌ 文件复制失败！
+    echo ERROR: File copy failed!
     pause
     exit /b 1
 )
-echo ✅ 静态文件复制完成
+echo OK: Static files copied
 echo.
 
-:: 4. 安装 Go 依赖
-echo 4️⃣ 安装 Go 依赖...
+:: 4. Install Go dependencies
+echo [4/5] Installing Go dependencies...
 go mod tidy
 if %errorlevel% neq 0 (
-    echo ❌ Go 依赖安装失败！
-    echo 请检查网络连接和 Go 代理设置
+    echo ERROR: Go dependency installation failed!
+    echo Please check network connection and Go proxy settings
     pause
     exit /b 1
 )
-echo ✅ Go 依赖安装完成
+echo OK: Go dependencies installed
 echo.
 
-:: 5. 构建后端 Go 应用
-echo 5️⃣ 构建后端 Go 应用...
+:: 5. Build backend Go application
+echo [5/5] Building backend Go application...
 go build -o spinner-wheel.exe
 if %errorlevel% neq 0 (
-    echo ❌ 后端构建失败！
-    echo 请检查 Go 代码是否有语法错误
+    echo ERROR: Backend build failed!
+    echo Please check Go code for syntax errors
     pause
     exit /b 1
 )
-echo ✅ 后端构建完成
+echo OK: Backend build completed
 echo.
 
 echo ============================================
-echo 🎉 构建完成！
+echo BUILD COMPLETED SUCCESSFULLY!
 echo ============================================
 echo.
-echo 📦 生成的文件:
-echo   - spinner-wheel.exe (主程序)
-echo   - static\ (前端资源)
-echo   - templates\ (开发模式模板)
-echo   - data\ (数据目录，运行时创建)
+echo Generated files:
+echo   - spinner-wheel.exe (main program)
+echo   - static\ (frontend resources)
+echo   - templates\ (development mode templates)
+echo   - data\ (data directory, created at runtime)
 echo.
-echo 🚀 运行应用:
-echo   双击 spinner-wheel.exe 启动服务器
-echo   或在命令行运行: spinner-wheel.exe
-echo   或运行: run.bat
+echo To run the application:
+echo   Double-click spinner-wheel.exe to start server
+echo   Or run from command line: spinner-wheel.exe
+echo   Or use: run.bat
 echo.
-echo 🌐 访问地址:
-echo   用户界面: http://localhost:8080/user  
-echo   管理界面: http://localhost:8080/admin
+echo Access URLs:
+echo   User interface: http://localhost:8080/user  
+echo   Admin interface: http://localhost:8080/admin
 echo.
-echo 📋 部署提示:
-echo   要在其他机器部署，复制以下文件/目录:
+echo Deployment note:
+echo   To deploy on other machines, copy these files/directories:
 echo   - spinner-wheel.exe
 echo   - static\
-echo   - templates\ (可选，用于开发模式)
+echo   - templates\ (optional, for development mode)
 echo.
 pause
