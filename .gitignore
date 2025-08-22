@@ -12,6 +12,7 @@
 # IDE files
 .idea/
 .vscode/
+.claude/
 *.swp
 *.swo
 *~
@@ -27,6 +28,11 @@
 # Temporary files
 *.tmp
 *.temp
+*.jpg
+*.png
+*.gif
+*.bmp
+test_*
 
 # OS generated files
 Thumbs.db
