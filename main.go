@@ -158,15 +158,38 @@ func main() {
 	// API routes
 	api := r.Group("/api")
 	{
+		// Game configuration
 		api.GET("/config", apiHandler.GetConfig)
 		api.POST("/config", apiHandler.UpdateConfig)
 		api.POST("/spin", apiHandler.Spin)
 		api.GET("/history", apiHandler.GetHistory)
 		api.POST("/reset", apiHandler.Reset)
+		
+		// Page management
+		api.POST("/switch-page", apiHandler.SwitchPage)
+		
+		// Restaurant data management
+		api.GET("/restaurant", apiHandler.GetRestaurantData)
+		api.POST("/restaurant/config", apiHandler.UpdateRestaurantConfig)
+		
+		// Advertisement management
+		api.POST("/advertisements", apiHandler.UploadAdvertisement)
+		api.DELETE("/advertisements/:id", apiHandler.DeleteAdvertisement)
+		
+		// Menu management
+		api.PUT("/menu/:id", apiHandler.UpdateMenuItem)
+		
+		// Recommendations management
+		api.POST("/recommendations", apiHandler.AddRecommendation)
+		api.PUT("/recommendations/:id", apiHandler.UpdateRecommendation)
+		api.DELETE("/recommendations/:id", apiHandler.DeleteRecommendation)
 	}
 
 	// WebSocket endpoint
 	r.GET("/ws", wsHandler.HandleWebSocket)
+
+	// Serve uploaded advertisement images
+	r.Static("/uploads", "data/uploads")
 
 	// Serve static files (React app will be built here)
 	staticPath := "static"

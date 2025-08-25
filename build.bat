@@ -53,7 +53,6 @@ echo.
 :: Ensure necessary directories exist
 echo [2/5] Creating necessary directories...
 if not exist "data" mkdir data
-if not exist "templates" mkdir templates
 if not exist "static" mkdir static
 echo OK: Directories prepared
 echo.
@@ -138,13 +137,12 @@ echo.
 echo Generated files:
 echo   - spinner-wheel.exe (main program)
 echo   - static\ (frontend resources)
-echo   - templates\ (development mode templates)
 echo   - data\ (data directory, created at runtime)
 echo.
 echo To run the application:
-echo   Double-click spinner-wheel.exe to start server
-echo   Or run from command line: spinner-wheel.exe
-echo   Or use: run.bat
+echo   Double-click START.bat for one-click start
+echo   Or double-click spinner-wheel.exe
+echo   Or use: run.bat for development
 echo.
 echo Access URLs:
 echo   User interface: http://localhost:8080/user  
@@ -154,6 +152,6 @@ echo Deployment note:
 echo   To deploy on other machines, copy these files/directories:
 echo   - spinner-wheel.exe
 echo   - static\
-echo   - templates\ (optional, for development mode)
+echo   - START.bat (recommended)
 echo.
 pause

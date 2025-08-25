@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import styled from 'styled-components';
-import User from './pages/User';
 import Admin from './pages/Admin';
+import Display from './components/Display';
 import './App.css';
 
 const AppContainer = styled.div`
@@ -35,7 +35,7 @@ function App() {
         <Router>
           <Routes>
             <Route path="/" element={<Navigate to="/user" replace />} />
-            <Route path="/user" element={<User />} />
+            <Route path="/user" element={<Display />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<Navigate to="/user" replace />} />
           </Routes>

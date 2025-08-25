@@ -19,7 +19,7 @@ const WheelContainer = styled.div`
 `;
 
 const WheelSvg = styled.svg<{ $isSpinning: boolean; $rotation: number }>`
-  cursor: ${props => props.$isSpinning ? 'wait' : 'pointer'};
+  cursor: ${props => props.$isSpinning ? 'wait' : 'default'};
   transform: rotate(${props => props.$rotation}deg);
   filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
   transition: ${props => props.$isSpinning ? 'transform 6s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none'};
@@ -173,12 +173,7 @@ const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
     }
   }, [isSpinning, winningIndex, segmentAngle]);
 
-  // Handle click
-  const handleClick = () => {
-    if (!disabled && !isSpinning) {
-      onSpin();
-    }
-  };
+  // Click handling disabled - spins are triggered by admin only
 
   // Truncate long text
   const truncateText = (text: string, maxLength: number = 6) => {
@@ -192,7 +187,6 @@ const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
         width={size}
         height={size}
         viewBox={`0 0 ${size} ${size}`}
-        onClick={handleClick}
         $isSpinning={isSpinning}
         $rotation={rotation}
       >

@@ -128,7 +128,11 @@ const HistorySection = styled.div`
   }
 `;
 
-const User: React.FC = () => {
+interface UserProps {
+  forcedMode?: number; // Optional forced mode override (1 or 2)
+}
+
+const User: React.FC<UserProps> = ({ forcedMode }) => {
   const [config, setConfig] = useState<GameConfig | null>(null);
   const [history, setHistory] = useState<SpinHistory>({ results: [] });
   const [isSpinning, setIsSpinning] = useState(false);
@@ -159,8 +163,10 @@ const User: React.FC = () => {
   useEffect(() => {
     loadData();
     
-    // Connect WebSocket
-    wsService.connect();
+    // Connect WebSocket only if not already connected
+    if (!wsService.isConnected()) {
+      wsService.connect();
+    }
 
     // Set up WebSocket event handlers
     const unsubscribeConfig = wsService.onConfigUpdated((data: GameConfig) => {
@@ -215,7 +221,7 @@ const User: React.FC = () => {
       clearInterval(pingInterval);
       wsService.disconnect();
     };
-  }, [loadData]);
+  }, []); // Removed loadData dependency to prevent effect re-registration
 
   // Handle spin request
   const handleSpin = async () => {
@@ -236,6 +242,12 @@ const User: React.FC = () => {
   // Announce result using TTS
   const announceResult = (result: SpinResult) => {
     if ('speechSynthesis' in window) {
+      // Prevent multiple simultaneous announcements
+      if (speechSynthesis.speaking) {
+        console.log('Speech already in progress, skipping announcement');
+        return;
+      }
+      
       const utterance = new SpeechSynthesisUtterance(
         `玩家${result.player}抽中了${result.prize}`
       );
@@ -259,11 +271,14 @@ const User: React.FC = () => {
     }
   };
 
-  // Get options based on mode
+  // Get options based on mode (with forced mode override)
   const getWheelOptions = (): PrizeOption[] => {
     if (!config) return [];
     
-    if (config.mode === 1) {
+    // Use forced mode if provided, otherwise use config mode
+    const activeMode = forcedMode ?? config.mode;
+    
+    if (activeMode === 1) {
       return config.mode1_options || [];
     } else {
       // Mode 2: Fixed options
@@ -274,6 +289,11 @@ const User: React.FC = () => {
       options.push({ text: '中奖了!', probability: 5 });
       return options;
     }
+  };
+
+  // Get display mode (with forced mode override)
+  const getDisplayMode = (): number => {
+    return forcedMode ?? config?.mode ?? 1;
   };
 
   if (loading) {
@@ -298,7 +318,7 @@ const User: React.FC = () => {
     <UserContainer>
       <Header>
         <Title>幸运转盘</Title>
-        <Subtitle>点击转盘开始抽奖</Subtitle>
+        <Subtitle>管理员控制抽奖</Subtitle>
       </Header>
 
       {error && <ErrorMessage>{error}</ErrorMessage>}
@@ -314,8 +334,8 @@ const User: React.FC = () => {
           />
           
           <GameStatus>
-            <GameModeIndicator $mode={config.mode}>
-              {config.mode === 1 ? '经典模式' : '固定概率模式'}
+            <GameModeIndicator $mode={getDisplayMode()}>
+              {getDisplayMode() === 1 ? '经典模式' : '固定概率模式'}
             </GameModeIndicator>
             
             <StatusItem>
@@ -336,7 +356,7 @@ const User: React.FC = () => {
 
           {!isSpinning && config.remaining_spins > 0 && (
             <SpinInstruction>
-              点击转盘进行抽奖
+              等待管理员触发抽奖
             </SpinInstruction>
           )}
 

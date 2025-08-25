@@ -12,6 +12,7 @@ type GameConfig struct {
 	CurrentPlayer  int              `json:"current_player"`          // Current player number
 	RemainingSpins int              `json:"remaining_spins"`         // Remaining spins
 	TotalSpins     int              `json:"total_spins"`             // Total spins counter
+	CurrentPage    string           `json:"current_page"`            // Current display page: "lottery1", "lottery2", "advertisement"
 }
 
 // PrizeOption represents a single prize option for mode 1
@@ -51,6 +52,64 @@ type ConfigUpdateRequest struct {
 	Mode1Options   []PrizeOption    `json:"mode1_options,omitempty"`
 	CurrentPlayer  *int             `json:"current_player,omitempty"`
 	RemainingSpins *int             `json:"remaining_spins,omitempty"`
+	CurrentPage    *string          `json:"current_page,omitempty"`
+}
+
+// Restaurant and Advertisement System Models
+
+// RestaurantConfig represents restaurant-wide settings
+type RestaurantConfig struct {
+	Name             string        `json:"name"`               // Restaurant name
+	AdRotationTime   int           `json:"ad_rotation_time"`   // Seconds between ad changes
+	AutoSwitchTime   int           `json:"auto_switch_time"`   // Seconds to stay on ads after lottery
+	EnableAutoSwitch bool          `json:"enable_auto_switch"` // Whether to auto-switch to ads after lottery
+}
+
+// Advertisement represents a single advertisement image
+type Advertisement struct {
+	ID       string    `json:"id"`        // Unique identifier
+	Filename string    `json:"filename"`  // Image filename
+	Name     string    `json:"name"`      // Display name
+	Active   bool      `json:"active"`    // Whether this ad is active
+	Order    int       `json:"order"`     // Display order
+	Created  time.Time `json:"created"`   // Creation time
+}
+
+// MenuItem represents a single menu item
+type MenuItem struct {
+	ID          string  `json:"id"`          // Unique identifier
+	Name        string  `json:"name"`        // Dish name
+	Price       float64 `json:"price"`       // Price
+	Description string  `json:"description"` // Description
+	Category    string  `json:"category"`    // Category (optional)
+	Available   bool    `json:"available"`   // Whether item is available
+	Order       int     `json:"order"`       // Display order
+	ImageURL    string  `json:"image_url"`   // Optional image URL
+}
+
+// Recommendation represents a daily recommendation
+type Recommendation struct {
+	ID          string    `json:"id"`          // Unique identifier
+	Name        string    `json:"name"`        // Dish name
+	Price       float64   `json:"price"`       // Price
+	Description string    `json:"description"` // Special description
+	Special     string    `json:"special"`     // Special note (e.g., "今日特价", "招牌菜")
+	Active      bool      `json:"active"`      // Whether this recommendation is active
+	Order       int       `json:"order"`       // Display order
+	Date        time.Time `json:"date"`        // Recommendation date
+}
+
+// RestaurantData contains all restaurant-related data
+type RestaurantData struct {
+	Config          RestaurantConfig  `json:"config"`
+	Advertisements  []Advertisement   `json:"advertisements"`
+	MenuItems       []MenuItem        `json:"menu_items"`
+	Recommendations []Recommendation  `json:"recommendations"`
+}
+
+// PageSwitchRequest represents a request to switch the display page
+type PageSwitchRequest struct {
+	Page string `json:"page"` // Target page: "lottery1", "lottery2", "advertisement"
 }
 
 // GetDefaultConfig returns the default game configuration
@@ -60,6 +119,7 @@ func GetDefaultConfig() *GameConfig {
 		CurrentPlayer:  1,
 		RemainingSpins: 100,
 		TotalSpins:     0,
+		CurrentPage:    "lottery1", // Default to lottery mode 1
 		Mode1Options: []PrizeOption{
 			{"奖品1", 8.33},
 			{"奖品2", 8.33},
@@ -75,6 +135,39 @@ func GetDefaultConfig() *GameConfig {
 			{"奖品12", 8.37}, // Slightly higher to make total 100%
 		},
 	}
+}
+
+// GetDefaultRestaurantData returns default restaurant configuration
+func GetDefaultRestaurantData() *RestaurantData {
+	return &RestaurantData{
+		Config: RestaurantConfig{
+			Name:             "XX土菜馆",
+			AdRotationTime:   10, // 10 seconds between ads
+			AutoSwitchTime:   30, // 30 seconds on ads after lottery
+			EnableAutoSwitch: false, // Disabled by default to prevent unwanted page switching
+		},
+		Advertisements:  []Advertisement{},
+		MenuItems:       generateDefaultMenuItems(),
+		Recommendations: []Recommendation{},
+	}
+}
+
+// generateDefaultMenuItems creates placeholder menu items (30 slots)
+func generateDefaultMenuItems() []MenuItem {
+	items := make([]MenuItem, 30)
+	for i := 0; i < 30; i++ {
+		items[i] = MenuItem{
+			ID:          fmt.Sprintf("menu_%d", i+1),
+			Name:        "",        // Empty by default
+			Price:       0,         // No price set
+			Description: "",        // Empty description
+			Category:    "主菜",      // Default category
+			Available:   false,     // Not available until configured
+			Order:       i + 1,     // Sequential order
+			ImageURL:    "",        // No image
+		}
+	}
+	return items
 }
 
 // GetMode2Options returns the fixed options for mode 2
@@ -101,6 +194,16 @@ func (c *GameConfig) ValidateConfig() error {
 		return fmt.Errorf("remaining spins cannot be negative")
 	}
 
+	// Validate current page
+	validPages := map[string]bool{
+		"lottery1":      true,
+		"lottery2":      true,
+		"advertisement": true,
+	}
+	if c.CurrentPage != "" && !validPages[c.CurrentPage] {
+		return fmt.Errorf("invalid current page: must be 'lottery1', 'lottery2', or 'advertisement'")
+	}
+
 	if c.Mode == 1 {
 		if len(c.Mode1Options) != 12 {
 			return fmt.Errorf("mode 1 must have exactly 12 options")
@@ -123,5 +226,20 @@ func (c *GameConfig) ValidateConfig() error {
 		}
 	}
 
+	return nil
+}
+
+// ValidatePageSwitchRequest validates a page switch request
+func (p *PageSwitchRequest) Validate() error {
+	validPages := map[string]bool{
+		"lottery1":      true,
+		"lottery2":      true,
+		"advertisement": true,
+	}
+	
+	if !validPages[p.Page] {
+		return fmt.Errorf("invalid page: must be 'lottery1', 'lottery2', or 'advertisement'")
+	}
+	
 	return nil
 }

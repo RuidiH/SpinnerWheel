@@ -25,6 +25,12 @@ class WebSocketService {
   }
 
   connect(): void {
+    // Prevent multiple connections
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      console.log('WebSocket already connected, skipping connection attempt');
+      return;
+    }
+    
     try {
       this.ws = new WebSocket(this.url);
       

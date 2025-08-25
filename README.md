@@ -1,373 +1,103 @@
-# 幸运转盘抽奖系统
+# 幸运转盘抽奖系统 / Spinner Wheel Lottery System
 
-一个支持实时更新的网页转盘抽奖应用，具备管理员配置和用户抽奖功能。
+一个支持实时更新的网页转盘抽奖应用，具备三页面切换、管理员配置和餐厅广告展示功能。
 
-## 系统要求
+A real-time web-based spinner wheel lottery application with three-page system, admin configuration, and restaurant advertisement display.
 
-- Windows 10/11 操作系统
-- 无需安装其他依赖（生产环境）
-- 开发环境需要：Go 1.21+ 和 Node.js 18+
+## 🚀 快速开始 / Quick Start
 
-## 快速开始
+### 简单三步启动 / Simple 3-Step Start
 
-### 方式一：使用部署包（推荐）
-
-1. **获取部署包**
-   - 下载预构建的部署包 ZIP 文件
-   - 解压到任意目录
-
-2. **启动应用**
-   - 双击 `启动服务器.bat`
-   - 或直接运行 `spinner-wheel.exe`
-
-3. **访问系统**
-   - 用户抽奖界面：http://localhost:8080/user
-   - 管理员配置界面：http://localhost:8080/admin
-
-### 方式二：从源码构建
-
-1. **首次设置**
+1. **首次构建 / First Build**
    ```bash
-   # 自动检查环境和安装依赖
-   setup.bat
-   ```
-
-2. **构建应用**
-   ```bash
-   # 构建完整版本
+   # 双击或运行 / Double-click or run
    build.bat
    ```
 
-3. **运行应用**
+2. **启动应用 / Start Application** 
    ```bash
-   # 启动服务器
-   run.bat
-   # 或直接运行
-   spinner-wheel.exe
+   # 双击或运行 / Double-click or run
+   START.bat
    ```
 
-### 数据文件说明
-- 程序会自动创建 `data/` 目录
-- 配置文件：`data/config.json`
-- 历史记录：`data/history.json`
+3. **打开浏览器 / Open Browser**
+   - 用户界面 User: http://localhost:8080/user
+   - 管理界面 Admin: http://localhost:8080/admin
 
-## 可用脚本说明
+## 🎯 系统功能 / System Features
 
-### 用户脚本
-- **`setup.bat`** - 首次设置，检查环境和安装依赖
-- **`build.bat`** - 完整构建，包含环境检查和错误处理
-- **`run.bat`** - 快速启动开发服务器
-- **`package.bat`** - 创建部署包（包含ZIP压缩）
+### 三页面系统 / Three-Page System
+- **抽奖模式1** - 自定义12个奖品和概率
+- **抽奖模式2** - 固定5%中奖率模式  
+- **广告展示页** - 餐厅菜单、推荐和广告轮播
 
-### 脚本功能详解
+### 实时控制 / Real-Time Control
+- 后台页面切换控制
+- 数字键盘1+2+3组合触发抽奖
+- WebSocket实时同步所有界面
 
-#### setup.bat - 环境初始化
-- 检查 Node.js 和 Go 是否已安装
-- 提供下载链接和版本建议
-- 自动安装前端和后端依赖
-- 创建必要的目录结构
-- 可选择立即构建应用
+### 餐厅管理 / Restaurant Management
+- 30项菜单管理
+- 今日推荐设置
+- 广告图片轮播
 
-#### build.bat - 智能构建
-- 环境检查（Node.js、Go、项目结构）
-- 自动安装缺失的依赖
-- 前端 React 应用构建
-- 后端 Go 应用编译
-- 详细的错误提示和解决方案
+## 📁 项目结构 / Project Structure
 
-#### package.bat - 部署包制作
-- 自动构建应用（如果需要）
-- 创建时间戳命名的发布包
-- 包含所有必要文件和启动脚本
-- 可选 ZIP 压缩
-- 生成详细的部署说明文档
+```
+SpinnerWheel/
+├── START.bat           # 一键启动脚本
+├── build.bat          # 构建脚本  
+├── clean.bat          # 清理脚本
+├── main.go            # 后端入口
+├── frontend/          # React前端源码
+├── handlers/          # API处理器
+├── models/           # 数据模型
+├── storage/          # 数据存储
+└── data/             # 运行时数据文件
+```
 
-### 开发环境搭建
+## 🔧 系统要求 / System Requirements
 
-1. **克隆代码仓库**
+- Windows 10/11
+- 首次构建需要: Go 1.21+ 和 Node.js 18+
+- 生产运行只需要生成的exe文件
+
+## 📖 常用操作 / Common Operations
+
+### 开发模式 / Development Mode
 ```bash
-git clone [repository-url]
-cd SpinnerWheel
+run.bat              # 开发服务器
+clean.bat           # 清理构建文件
 ```
 
-2. **安装后端依赖**
+### 生产部署 / Production Deployment  
 ```bash
-go mod init spinner-wheel
-go mod tidy
+package.bat         # 创建部署包
 ```
 
-3. **安装前端依赖**
-```bash
-cd frontend
-npm install
-```
+## 🛠️ 故障排除 / Troubleshooting
 
-4. **开发模式运行**
-```bash
-# 终端1: 启动后端
-go run .
+### 端口被占用 / Port in Use
+- 关闭其他使用8080端口的程序
+- 或使用: `spinner-wheel.exe -port 9000`
 
-# 终端2: 启动前端开发服务器
-cd frontend
-npm start
-```
+### 构建失败 / Build Failed
+- 检查网络连接
+- 删除 `frontend\node_modules` 重新构建
+- 确保 Node.js 版本 18+
 
-### 生产环境构建
+### 数据丢失 / Data Loss
+- 数据自动保存在 `data/` 目录
+- 建议定期备份此目录
 
-**推荐方式（使用脚本）：**
-```bash
-# Windows 系统
-build.bat
+## 📚 更多文档 / More Documentation
 
-# 或手动执行以下步骤
-```
-
-**手动构建步骤：**
-1. **构建前端**
-```bash
-cd frontend
-npm run build
-cd ..
-```
-
-2. **复制前端文件**
-```bash
-# 创建静态目录
-mkdir static
-# 复制构建文件
-xcopy /E /Y frontend\build\* static\
-```
-
-3. **构建后端**
-```bash
-go build -o spinner-wheel.exe
-```
-
-4. **运行**
-```bash
-./spinner-wheel.exe
-```
-
-## 使用说明
-
-### 管理员操作
-
-1. **访问管理界面**：http://localhost:8080/admin
-
-2. **游戏模式配置**
-   - **模式1**：自定义奖品，每个奖品可设置中奖概率
-   - **模式2**：固定模式，5%中奖率（"没中奖" vs "中奖了!"）
-
-3. **基本设置**
-   - 设置当前玩家编号
-   - 设置总抽奖次数
-   - 保存配置或重置游戏
-
-4. **实时更新**
-   - 所有配置更改会立即同步到用户界面
-   - 如果正在抽奖，更新会在抽奖结束后生效
-
-### 用户操作
-
-1. **访问抽奖界面**：http://localhost:8080/user
-
-2. **进行抽奖**
-   - 点击转盘开始抽奖
-   - 转盘会旋转3-4秒后停止
-   - 系统会语音播报中奖结果
-
-3. **查看信息**
-   - 当前玩家编号
-   - 剩余抽奖次数
-   - 最近2天的抽奖历史
-
-## 概率算法说明
-
-### 模式1 - 加权概率算法
-使用累积分布函数（CDF）实现精确的概率控制：
-
-1. **概率累积**：将所有奖品概率累加构建累积数组
-   ```
-   奖品概率: [10%, 15%, 20%, 30%, 25%]
-   累积数组: [10, 25, 45, 75, 100]
-   ```
-
-2. **随机选择**：生成0-100的随机数，查找对应区间
-   ```
-   随机数30 → 落在区间(25, 45] → 选中第3个奖品
-   ```
-
-3. **精确保证**：严格按照设定概率分配中奖机会，支持小数点精度
-
-### 模式2 - 固定概率算法
-简单的5%中奖率实现：
-
-```go
-if rand.Float64() < 0.05 {  // 5%概率
-    return "中奖了!"
-} else {                     // 95%概率  
-    return "没中奖"
-}
-```
-
-在任意12个区段中随机选择显示位置，但结果始终维持5%中奖率。
-
-### 安全性保证
-- ✅ **服务端计算**：所有概率计算在后端执行，前端无法篡改
-- ✅ **时间戳种子**：使用纳秒级时间戳作为随机种子，确保真正随机
-- ✅ **防作弊设计**：结果由服务器决定后发送给客户端，客户端仅负责动画展示
-- ✅ **数据完整性**：历史记录与实际中奖结果完全一致
-
-## 配置文件说明
-
-### config.json 结构
-```json
-{
-  "mode": 1,
-  "mode1_options": [
-    {"text": "奖品1", "probability": 8.33},
-    {"text": "奖品2", "probability": 8.33}
-  ],
-  "current_player": 1,
-  "remaining_spins": 100,
-  "total_spins": 0
-}
-```
-
-### 字段说明
-- `mode`: 游戏模式（1或2）
-- `mode1_options`: 模式1的奖品配置
-- `current_player`: 当前玩家编号
-- `remaining_spins`: 剩余抽奖次数
-- `total_spins`: 总抽奖次数统计
-
-## 端口配置
-
-默认端口：8080
-
-修改端口：
-```bash
-./spinner-wheel.exe -port 9000
-```
-
-## 故障排除
-
-### 常见问题
-
-1. **程序启动后立即闪退/崩溃**
-   - **问题原因**：缺少必要文件导致模板加载失败
-   - **解决方案（多种方式）**：
-     ```bash
-     # 方案A: 运行完整构建流程（推荐）
-     build.bat
-     
-     # 方案B: 仅运行（会自动创建基础模板）
-     run.bat
-     
-     # 方案C: 首次设置
-     setup.bat
-     ```
-   - **自动修复**：新版本会自动创建缺失的模板文件
-   - **验证方法**：启动时应显示"开发模式"或"生产模式"信息
-
-2. **无法启动程序（端口占用）**
-   - 检查端口8080是否被占用
-   - 尝试使用不同端口启动：`spinner-wheel.exe -port 9000`
-
-3. **无法访问网页**
-   - 确认程序正在运行（应显示"服务器启动在端口 8080"）
-   - 检查防火墙设置
-   - 尝试 http://127.0.0.1:8080
-
-4. **显示开发模式界面**
-   - **现象**：看到简化的HTML页面而非完整转盘界面
-   - **原因**：`static/` 目录不存在或为空
-   - **解决**：运行 `build.bat` 重新构建前端
-
-5. **配置丢失**
-   - 检查 `data/` 目录权限
-   - 确保程序有写入权限
-
-6. **转盘不旋转**
-   - 检查浏览器控制台错误
-   - 确认 WebSocket 连接正常
-   - 刷新页面重试
-
-7. **环境依赖问题**
-   - **Node.js 版本过低**：升级到 18+ 版本
-   - **Go 版本过低**：升级到 1.21+ 版本
-   - **网络问题**：配置 npm 或 Go 代理
-   - **权限问题**：以管理员身份运行构建脚本
-
-8. **构建失败问题**
-   - **前端构建失败**：删除 `frontend/node_modules` 后重新运行 `build.bat`
-   - **后端构建失败**：运行 `go mod tidy` 检查依赖
-   - **文件复制失败**：检查磁盘空间和权限
-
-### 部署最佳实践
-
-#### 开发者部署流程
-```bash
-# 1. 首次克隆仓库后
-setup.bat
-
-# 2. 开发过程中
-run.bat  # 快速测试
-
-# 3. 创建发布版本
-build.bat
-package.bat  # 创建部署包
-```
-
-#### 生产环境部署流程
-1. **获取部署包**：从开发者处获取 ZIP 包或使用 `package.bat` 创建
-2. **解压部署**：解压到目标目录
-3. **启动测试**：双击 `启动服务器.bat` 验证功能
-4. **配置调整**：根据需要修改端口或配置
-5. **备份设置**：定期备份 `data/` 目录
-
-#### 多机器部署注意事项
-- 确保每台机器有独立的 `data/` 目录
-- 不同机器使用不同端口避免冲突
-- 复制整个部署包，不要只复制 exe 文件
-- 检查 Windows 防火墙设置
-
-### 数据备份
-
-重要数据位于 `data/` 目录：
-- 定期备份 `config.json`（游戏配置）
-- 定期备份 `history.json`（抽奖历史）
-
-### 日志查看
-
-程序运行时会在控制台输出日志信息，包括：
-- API 请求记录
-- WebSocket 连接状态
-- 错误信息
-
-## 技术架构
-
-- **后端**：Go + Gin 框架
-- **前端**：React + TypeScript
-- **通信**：WebSocket 实时更新
-- **存储**：JSON 文件
-- **部署**：单一可执行文件
-
-## 浏览器兼容性
-
-支持以下浏览器最新版本：
-- Chrome
-- Firefox
-- Safari
-- Edge
-
-## 联系支持
-
-如遇问题，请检查：
-1. 程序运行日志
-2. 浏览器控制台错误
-3. 网络连接状态
+- `DEVELOPMENT.md` - 开发者指南
+- `DEPLOYMENT.md` - 部署指南  
+- `feedback.txt` - 客户反馈记录
 
 ---
 
-© 2024 幸运转盘抽奖系统
+**技术栈**: Go + Gin + React + TypeScript + WebSocket  
+**版本**: v1.0.0  
+**开发**: Claude Code Assistant

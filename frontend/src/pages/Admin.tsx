@@ -1,6 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
-import { apiService, GameConfig, PrizeOption, ConfigUpdateRequest } from '../services/api';
+import { 
+  apiService, 
+  GameConfig, 
+  PrizeOption, 
+  ConfigUpdateRequest, 
+  RestaurantData,
+  RestaurantConfig,
+  Advertisement,
+  MenuItem,
+  Recommendation
+} from '../services/api';
 import { wsService } from '../services/websocket';
 
 const AdminContainer = styled.div`
@@ -235,6 +245,7 @@ const Admin: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [currentPage, setCurrentPage] = useState('lottery1');
 
   // Form state
   const [currentPlayer, setCurrentPlayer] = useState(1);
@@ -242,17 +253,43 @@ const Admin: React.FC = () => {
   const [selectedMode, setSelectedMode] = useState(1);
   const [mode1Options, setMode1Options] = useState<PrizeOption[]>([]);
 
+  // Restaurant management state
+  const [restaurantData, setRestaurantData] = useState<RestaurantData | null>(null);
+  const [restaurantName, setRestaurantName] = useState('XX土菜馆');
+  const [adRotationTime, setAdRotationTime] = useState(10);
+  const [autoSwitchTime, setAutoSwitchTime] = useState(30);
+  const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+
+  // Debouncing timeouts for menu and recommendation updates
+  const [menuUpdateTimeouts, setMenuUpdateTimeouts] = useState<Map<string, NodeJS.Timeout>>(new Map());
+  const [recommendationUpdateTimeouts, setRecommendationUpdateTimeouts] = useState<Map<string, NodeJS.Timeout>>(new Map());
+
   // Load initial configuration
   const loadConfig = useCallback(async () => {
     try {
       setLoading(true);
-      const configData = await apiService.getConfig();
+      const [configData, restaurantDataResult] = await Promise.all([
+        apiService.getConfig(),
+        apiService.getRestaurantData()
+      ]);
       
-      // Update form state
+      // Update game config state
       setCurrentPlayer(configData.current_player);
       setRemainingSpins(configData.remaining_spins);
       setSelectedMode(configData.mode);
       setMode1Options(configData.mode1_options || []);
+      setCurrentPage(configData.current_page || 'lottery1');
+      
+      // Update restaurant data state
+      setRestaurantData(restaurantDataResult);
+      setRestaurantName(restaurantDataResult.config.name);
+      setAdRotationTime(restaurantDataResult.config.ad_rotation_time);
+      setAutoSwitchTime(restaurantDataResult.config.auto_switch_time);
+      setAdvertisements(restaurantDataResult.advertisements || []);
+      setMenuItems(restaurantDataResult.menu_items || []);
+      setRecommendations(restaurantDataResult.recommendations || []);
       
       setError('');
     } catch (err: any) {
@@ -276,11 +313,28 @@ const Admin: React.FC = () => {
       setRemainingSpins(data.remaining_spins);
       setSelectedMode(data.mode);
       setMode1Options(data.mode1_options || []);
+      setCurrentPage(data.current_page || 'lottery1');
+    });
+
+    // Listen for page switching events
+    const unsubscribePageSwitch = wsService.on('page_switched', (data: any) => {
+      setCurrentPage(data.page);
+      if (data.config) {
+        setCurrentPlayer(data.config.current_player);
+        setRemainingSpins(data.config.remaining_spins);
+        setSelectedMode(data.config.mode);
+        setMode1Options(data.config.mode1_options || []);
+      }
     });
 
     return () => {
       unsubscribe();
+      unsubscribePageSwitch();
       wsService.disconnect();
+      
+      // Clear any pending debounced API calls to prevent memory leaks
+      menuUpdateTimeouts.forEach(timeout => clearTimeout(timeout));
+      recommendationUpdateTimeouts.forEach(timeout => clearTimeout(timeout));
     };
   }, [loadConfig]);
 
@@ -297,6 +351,85 @@ const Admin: React.FC = () => {
       setMode1Options(defaultOptions);
     }
   }, [mode1Options.length]);
+
+  // Keyboard event system for numpad 1+2+3 combination
+  useEffect(() => {
+    const pressedKeys = new Set<string>();
+    let keyComboTimeout: NodeJS.Timeout | null = null;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle numpad keys 1, 2, 3
+      if (event.code === 'Numpad1' || event.code === 'Numpad2' || event.code === 'Numpad3') {
+        event.preventDefault();
+        pressedKeys.add(event.code);
+
+        // Clear any existing timeout
+        if (keyComboTimeout) {
+          clearTimeout(keyComboTimeout);
+        }
+
+        // Check if all three keys are pressed AND we're on a lottery page
+        if (pressedKeys.size === 3 && 
+            pressedKeys.has('Numpad1') && 
+            pressedKeys.has('Numpad2') && 
+            pressedKeys.has('Numpad3') &&
+            (currentPage === 'lottery1' || currentPage === 'lottery2')) {
+          
+          // Trigger spin
+          handleKeyboardSpin();
+          
+          // Clear pressed keys
+          pressedKeys.clear();
+        } else {
+          // Set timeout to clear keys if combination not completed within 500ms
+          keyComboTimeout = setTimeout(() => {
+            pressedKeys.clear();
+          }, 500);
+        }
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      // Remove released key from pressed keys set
+      if (event.code === 'Numpad1' || event.code === 'Numpad2' || event.code === 'Numpad3') {
+        pressedKeys.delete(event.code);
+      }
+    };
+
+    // Add event listeners
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
+      if (keyComboTimeout) {
+        clearTimeout(keyComboTimeout);
+      }
+    };
+  }, [currentPage]); // Add currentPage dependency to re-register when page changes
+
+  // Handle keyboard-triggered spin
+  const handleKeyboardSpin = async () => {
+    try {
+      setError('');
+      setSuccess('');
+      
+      // Show feedback that keyboard combo was detected
+      setSuccess('键盘组合触发抽奖！(Numpad 1+2+3)');
+      
+      // Trigger spin via API
+      await apiService.spin();
+      
+      // Clear success message after 2 seconds
+      setTimeout(() => setSuccess(''), 2000);
+      
+    } catch (err: any) {
+      console.error('Keyboard spin failed:', err);
+      setError(err.message || '键盘触发抽奖失败');
+    }
+  };
 
   // Handle mode1 option change
   const handleMode1OptionChange = (index: number, field: 'text' | 'probability', value: string) => {
@@ -357,7 +490,7 @@ const Admin: React.FC = () => {
       }
 
       // Save configuration
-      const updatedConfig = await apiService.updateConfig(updateRequest);
+      await apiService.updateConfig(updateRequest);
       setSuccess('配置保存成功！');
 
       // Clear success message after 3 seconds
@@ -397,6 +530,267 @@ const Admin: React.FC = () => {
     }
   };
 
+  // Handle page switching
+  const handlePageSwitch = async (targetPage: string) => {
+    try {
+      setError('');
+      setSuccess('');
+
+      const response = await fetch('/api/switch-page', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ page: targetPage }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '切换页面失败');
+      }
+
+      setSuccess(`已切换到${getPageDisplayName(targetPage)}`);
+      
+      // Clear success message after 2 seconds
+      setTimeout(() => setSuccess(''), 2000);
+
+    } catch (err: any) {
+      console.error('Failed to switch page:', err);
+      setError(err.message || '切换页面失败');
+    }
+  };
+
+  // Get display name for page
+  const getPageDisplayName = (page: string) => {
+    switch (page) {
+      case 'lottery1': return '抽奖模式1';
+      case 'lottery2': return '抽奖模式2'; 
+      case 'advertisement': return '广告展示页';
+      default: return '未知页面';
+    }
+  };
+
+  // Restaurant management handlers
+
+  // Handle restaurant config save
+  const handleSaveRestaurantConfig = async () => {
+    try {
+      setSaving(true);
+      setError('');
+      setSuccess('');
+
+      const config: RestaurantConfig = {
+        name: restaurantName,
+        ad_rotation_time: adRotationTime,
+        auto_switch_time: autoSwitchTime,
+        enable_auto_switch: false // Keep disabled as per previous fix
+      };
+
+      await apiService.updateRestaurantConfig(config);
+      setSuccess('餐厅配置已保存');
+
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      console.error('Failed to save restaurant config:', err);
+      setError(err.message || '保存餐厅配置失败');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle advertisement upload
+  const handleAdvertisementUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('请选择图片文件');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('图片文件不能超过5MB');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError('');
+      setSuccess('');
+
+      const result = await apiService.uploadAdvertisement(file, file.name);
+      setAdvertisements([...advertisements, result]);
+      setSuccess('广告上传成功');
+
+      // Clear the file input
+      if (event.target) {
+        event.target.value = '';
+      }
+
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      console.error('Failed to upload advertisement:', err);
+      setError(err.message || '广告上传失败');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle advertisement deletion
+  const handleDeleteAdvertisement = async (id: string) => {
+    if (!window.confirm('确定要删除这个广告吗？')) {
+      return;
+    }
+
+    try {
+      setError('');
+      setSuccess('');
+
+      await apiService.deleteAdvertisement(id);
+      setAdvertisements(advertisements.filter(ad => ad.id !== id));
+      setSuccess('广告删除成功');
+
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      console.error('Failed to delete advertisement:', err);
+      setError(err.message || '删除广告失败');
+    }
+  };
+
+  // Handle menu item update with debouncing
+  const handleMenuItemUpdate = useCallback((id: string, field: keyof MenuItem, value: any) => {
+    const item = menuItems.find(m => m.id === id);
+    if (!item) return;
+
+    // Update local state immediately for responsive UI
+    const updated: MenuItem = { ...item, [field]: value };
+    setMenuItems(prev => prev.map(m => m.id === id ? updated : m));
+
+    // Clear existing timeout for this item
+    const existingTimeout = menuUpdateTimeouts.get(id);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+
+    // Set up debounced API call
+    const newTimeout = setTimeout(async () => {
+      try {
+        await apiService.updateMenuItem(id, updated);
+        // Optionally show brief success feedback (commented out to reduce noise)
+        // setSuccess(`菜品 ${updated.name || '未命名'} 已更新`);
+        // setTimeout(() => setSuccess(''), 1000);
+      } catch (err: any) {
+        console.error('Failed to update menu item:', err);
+        setError(err.message || '更新菜单项失败');
+        // Revert local state on error
+        setMenuItems(prev => prev.map(m => m.id === id ? item : m));
+      } finally {
+        // Clean up timeout from map
+        setMenuUpdateTimeouts(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(id);
+          return newMap;
+        });
+      }
+    }, 800); // 800ms debounce delay
+
+    // Store timeout in map
+    setMenuUpdateTimeouts(prev => {
+      const newMap = new Map(prev);
+      newMap.set(id, newTimeout);
+      return newMap;
+    });
+  }, [menuItems, menuUpdateTimeouts]);
+
+  // Handle add recommendation
+  const handleAddRecommendation = async () => {
+    const newRec: Omit<Recommendation, 'id' | 'date'> = {
+      name: '',
+      price: 0,
+      description: '',
+      special: '今日特价',
+      active: true,
+      order: recommendations.length + 1
+    };
+
+    try {
+      setError('');
+      const result = await apiService.addRecommendation(newRec);
+      setRecommendations([...recommendations, result]);
+      setSuccess('推荐菜品已添加');
+
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      console.error('Failed to add recommendation:', err);
+      setError(err.message || '添加推荐失败');
+    }
+  };
+
+  // Handle recommendation update with debouncing
+  const handleUpdateRecommendation = useCallback((id: string, field: keyof Recommendation, value: any) => {
+    const rec = recommendations.find(r => r.id === id);
+    if (!rec) return;
+
+    // Update local state immediately for responsive UI
+    const updated: Recommendation = { ...rec, [field]: value };
+    setRecommendations(prev => prev.map(r => r.id === id ? updated : r));
+
+    // Clear existing timeout for this recommendation
+    const existingTimeout = recommendationUpdateTimeouts.get(id);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+
+    // Set up debounced API call
+    const newTimeout = setTimeout(async () => {
+      try {
+        await apiService.updateRecommendation(id, updated);
+        // Optionally show brief success feedback (commented out to reduce noise)
+        // setSuccess(`推荐 ${updated.name || '未命名'} 已更新`);
+        // setTimeout(() => setSuccess(''), 1000);
+      } catch (err: any) {
+        console.error('Failed to update recommendation:', err);
+        setError(err.message || '更新推荐失败');
+        // Revert local state on error
+        setRecommendations(prev => prev.map(r => r.id === id ? rec : r));
+      } finally {
+        // Clean up timeout from map
+        setRecommendationUpdateTimeouts(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(id);
+          return newMap;
+        });
+      }
+    }, 800); // 800ms debounce delay
+
+    // Store timeout in map
+    setRecommendationUpdateTimeouts(prev => {
+      const newMap = new Map(prev);
+      newMap.set(id, newTimeout);
+      return newMap;
+    });
+  }, [recommendations, recommendationUpdateTimeouts]);
+
+  // Handle delete recommendation
+  const handleDeleteRecommendation = async (id: string) => {
+    if (!window.confirm('确定要删除这个推荐吗？')) {
+      return;
+    }
+
+    try {
+      await apiService.deleteRecommendation(id);
+      setRecommendations(recommendations.filter(r => r.id !== id));
+      setSuccess('推荐删除成功');
+
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      console.error('Failed to delete recommendation:', err);
+      setError(err.message || '删除推荐失败');
+    }
+  };
+
   if (loading) {
     return (
       <AdminContainer>
@@ -415,6 +809,57 @@ const Admin: React.FC = () => {
       <ConfigForm>
         {error && <ErrorMessage>{error}</ErrorMessage>}
         {success && <SuccessMessage>{success}</SuccessMessage>}
+
+        {/* Page Control Section */}
+        <Section>
+          <SectionTitle>页面控制</SectionTitle>
+          
+          <div style={{ marginBottom: '16px' }}>
+            <strong>当前显示页面: </strong>
+            <span style={{ 
+              color: '#667eea', 
+              fontWeight: '600',
+              background: 'rgba(102, 126, 234, 0.1)',
+              padding: '4px 8px',
+              borderRadius: '4px'
+            }}>
+              {getPageDisplayName(currentPage)}
+            </span>
+          </div>
+
+          <ButtonGroup>
+            <Button 
+              $variant={currentPage === 'lottery1' ? 'primary' : 'secondary'}
+              onClick={() => handlePageSwitch('lottery1')}
+              disabled={saving}
+            >
+              切换到抽奖模式1
+            </Button>
+            <Button 
+              $variant={currentPage === 'lottery2' ? 'primary' : 'secondary'}
+              onClick={() => handlePageSwitch('lottery2')}
+              disabled={saving}
+            >
+              切换到抽奖模式2
+            </Button>
+            <Button 
+              $variant={currentPage === 'advertisement' ? 'primary' : 'secondary'}
+              onClick={() => handlePageSwitch('advertisement')}
+              disabled={saving}
+            >
+              切换到广告展示页
+            </Button>
+          </ButtonGroup>
+          
+          <div style={{ 
+            marginTop: '12px',
+            fontSize: '14px',
+            color: '#666',
+            fontStyle: 'italic'
+          }}>
+            页面切换将立即同步到所有连接的用户界面
+          </div>
+        </Section>
 
         {/* Game Mode Selection */}
         <Section>
@@ -524,6 +969,321 @@ const Admin: React.FC = () => {
           </FormGroup>
         </Section>
 
+        {/* Restaurant Management */}
+        <Section>
+          <SectionTitle>餐厅管理</SectionTitle>
+          
+          <FormGroup>
+            <Label>餐厅名称</Label>
+            <Input
+              type="text"
+              value={restaurantName}
+              placeholder="输入餐厅名称"
+              onChange={(e) => setRestaurantName(e.target.value)}
+            />
+            <small style={{ color: '#666', fontSize: '12px' }}>
+              修改餐厅名称后需要保存配置
+            </small>
+          </FormGroup>
+          
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '16px',
+            marginTop: '16px'
+          }}>
+            <FormGroup>
+              <Label>广告轮播间隔 (秒)</Label>
+              <Input
+                type="number"
+                min="5"
+                max="60"
+                value={adRotationTime}
+                onChange={(e) => setAdRotationTime(parseInt(e.target.value) || 10)}
+              />
+            </FormGroup>
+            
+            <FormGroup>
+              <Label>广告显示时长 (秒)</Label>
+              <Input
+                type="number"
+                min="10"
+                max="300"
+                value={autoSwitchTime}
+                onChange={(e) => setAutoSwitchTime(parseInt(e.target.value) || 30)}
+              />
+            </FormGroup>
+          </div>
+          
+          <div style={{ marginTop: '16px' }}>
+            <Button 
+              $variant="primary"
+              onClick={handleSaveRestaurantConfig}
+              disabled={saving}
+            >
+              {saving ? '保存中...' : '保存餐厅配置'}
+            </Button>
+          </div>
+        </Section>
+
+        {/* Advertisement Management */}
+        <Section>
+          <SectionTitle>广告管理</SectionTitle>
+          
+          <div style={{ marginBottom: '16px' }}>
+            <Label>上传广告图片</Label>
+            <div style={{ 
+              border: '2px dashed #ccc',
+              borderRadius: '8px',
+              padding: '40px',
+              textAlign: 'center',
+              marginTop: '8px'
+            }}>
+              <div style={{ color: '#666', fontSize: '16px', marginBottom: '8px' }}>
+                📸 拖拽图片到此处或点击上传
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAdvertisementUpload}
+                style={{ display: 'none' }}
+                id="advertisement-upload"
+                disabled={saving}
+              />
+              <label htmlFor="advertisement-upload">
+                <Button 
+                  $variant="secondary" 
+                  as="span"
+                  style={{ cursor: saving ? 'not-allowed' : 'pointer' }}
+                >
+                  {saving ? '上传中...' : '选择图片文件'}
+                </Button>
+              </label>
+              <div style={{ fontSize: '12px', color: '#999', marginTop: '8px' }}>
+                支持 JPG、PNG、GIF 格式，建议尺寸 1920x1080，最大5MB
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <strong>当前广告列表 ({advertisements.length} 项):</strong>
+            <div style={{
+              marginTop: '8px',
+              padding: '16px',
+              background: '#f8f9fa',
+              borderRadius: '8px',
+              border: '1px solid #e9ecef'
+            }}>
+              {advertisements.length === 0 ? (
+                <div style={{ color: '#666', textAlign: 'center', fontStyle: 'italic' }}>
+                  暂无广告图片，请上传广告文件
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {advertisements.map((ad) => (
+                    <div key={ad.id} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      background: 'white',
+                      borderRadius: '6px',
+                      border: '1px solid #dee2e6'
+                    }}>
+                      <div>
+                        <strong>{ad.name}</strong>
+                        <div style={{ fontSize: '12px', color: '#666' }}>
+                          {ad.filename} • {new Date(ad.created).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <Button
+                        $variant="danger"
+                        onClick={() => handleDeleteAdvertisement(ad.id)}
+                        style={{ fontSize: '12px', padding: '4px 8px' }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </Section>
+
+        {/* Menu Management */}
+        <Section>
+          <SectionTitle>菜单管理 (30项)</SectionTitle>
+          
+          <div style={{
+            marginBottom: '16px',
+            fontSize: '14px',
+            color: '#666'
+          }}>
+            配置餐厅菜单项，将显示在广告页面底部
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '12px',
+            maxHeight: '500px',
+            overflowY: 'auto',
+            padding: '4px'
+          }}>
+            {menuItems.map((item, i) => (
+              <div key={item.id} style={{
+                border: '1px solid #e1e5e9',
+                borderRadius: '8px',
+                padding: '12px',
+                background: item.available ? '#f8f9fa' : '#fff5f5'
+              }}>
+                <div style={{ fontWeight: '600', marginBottom: '8px', fontSize: '14px' }}>
+                  菜品 {i + 1}
+                </div>
+                <FormGroup style={{ marginBottom: '8px' }}>
+                  <Input
+                    type="text"
+                    placeholder="菜品名称"
+                    value={item.name}
+                    onChange={(e) => handleMenuItemUpdate(item.id, 'name', e.target.value)}
+                    style={{ fontSize: '14px', padding: '6px 8px' }}
+                  />
+                </FormGroup>
+                <FormGroup style={{ marginBottom: '8px' }}>
+                  <Input
+                    type="number"
+                    placeholder="价格"
+                    step="0.01"
+                    min="0"
+                    value={item.price || ''}
+                    onChange={(e) => handleMenuItemUpdate(item.id, 'price', parseFloat(e.target.value) || 0)}
+                    style={{ fontSize: '14px', padding: '6px 8px' }}
+                  />
+                </FormGroup>
+                <FormGroup style={{ marginBottom: '8px' }}>
+                  <Input
+                    type="text"
+                    placeholder="描述"
+                    value={item.description}
+                    onChange={(e) => handleMenuItemUpdate(item.id, 'description', e.target.value)}
+                    style={{ fontSize: '14px', padding: '6px 8px' }}
+                  />
+                </FormGroup>
+                <div style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={item.available}
+                    onChange={(e) => handleMenuItemUpdate(item.id, 'available', e.target.checked)}
+                  />
+                  <span>可用</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        {/* Today's Recommendations Management */}
+        <Section>
+          <SectionTitle>今日推荐管理</SectionTitle>
+          
+          <div style={{ marginBottom: '16px' }}>
+            <ButtonGroup>
+              <Button 
+                $variant="primary"
+                onClick={handleAddRecommendation}
+              >
+                添加推荐菜品
+              </Button>
+            </ButtonGroup>
+          </div>
+
+          <div style={{
+            padding: '16px',
+            background: '#f8f9fa',
+            borderRadius: '8px',
+            border: '1px solid #e9ecef'
+          }}>
+            {recommendations.length === 0 ? (
+              <div style={{ color: '#666', textAlign: 'center', fontStyle: 'italic' }}>
+                暂无今日推荐菜品
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {recommendations.map((rec) => (
+                  <div key={rec.id} style={{
+                    background: 'white',
+                    border: '1px solid #dee2e6',
+                    borderRadius: '8px',
+                    padding: '16px'
+                  }}>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr 120px auto',
+                      gap: '12px',
+                      alignItems: 'center'
+                    }}>
+                      <FormGroup style={{ margin: 0 }}>
+                        <Input
+                          type="text"
+                          placeholder="菜品名称"
+                          value={rec.name}
+                          onChange={(e) => handleUpdateRecommendation(rec.id, 'name', e.target.value)}
+                          style={{ fontSize: '14px' }}
+                        />
+                      </FormGroup>
+                      <FormGroup style={{ margin: 0 }}>
+                        <Input
+                          type="number"
+                          placeholder="价格"
+                          step="0.01"
+                          min="0"
+                          value={rec.price || ''}
+                          onChange={(e) => handleUpdateRecommendation(rec.id, 'price', parseFloat(e.target.value) || 0)}
+                          style={{ fontSize: '14px' }}
+                        />
+                      </FormGroup>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <input
+                          type="checkbox"
+                          checked={rec.active}
+                          onChange={(e) => handleUpdateRecommendation(rec.id, 'active', e.target.checked)}
+                        />
+                        <span style={{ fontSize: '14px' }}>启用</span>
+                      </div>
+                      <Button
+                        $variant="danger"
+                        onClick={() => handleDeleteRecommendation(rec.id)}
+                        style={{ fontSize: '12px', padding: '4px 8px' }}
+                      >
+                        删除
+                      </Button>
+                    </div>
+                    <FormGroup style={{ marginTop: '12px', marginBottom: '8px' }}>
+                      <Input
+                        type="text"
+                        placeholder="描述"
+                        value={rec.description}
+                        onChange={(e) => handleUpdateRecommendation(rec.id, 'description', e.target.value)}
+                        style={{ fontSize: '14px' }}
+                      />
+                    </FormGroup>
+                    <FormGroup style={{ margin: 0 }}>
+                      <Input
+                        type="text"
+                        placeholder="特色标签 (如: 今日特价)"
+                        value={rec.special}
+                        onChange={(e) => handleUpdateRecommendation(rec.id, 'special', e.target.value)}
+                        style={{ fontSize: '14px' }}
+                      />
+                    </FormGroup>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </Section>
+
         {/* Actions */}
         <Section>
           <SectionTitle>操作</SectionTitle>
@@ -541,6 +1301,20 @@ const Admin: React.FC = () => {
               打开用户界面
             </Button>
           </ButtonGroup>
+          
+          <div style={{ 
+            marginTop: '20px', 
+            padding: '12px', 
+            background: 'rgba(102, 126, 234, 0.1)', 
+            border: '1px solid #667eea', 
+            borderRadius: '8px',
+            fontSize: '14px',
+            color: '#555'
+          }}>
+            <strong>快捷键:</strong> 同时按下数字键盘的 1、2、3 键可触发抽奖
+            <br />
+            <small>用于外接物理按键设备控制</small>
+          </div>
         </Section>
       </ConfigForm>
     </AdminContainer>
