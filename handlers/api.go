@@ -502,7 +502,7 @@ func (h *APIHandler) UploadAdvertisement(c *gin.Context) {
 	}
 
 	c.Header("Content-Type", "application/json; charset=utf-8")
-	c.JSON(http.StatusOK, gin.H{"message": "Advertisement uploaded successfully", "advertisement": ad})
+	c.JSON(http.StatusOK, ad)
 }
 
 // DeleteAdvertisement deletes an advertisement

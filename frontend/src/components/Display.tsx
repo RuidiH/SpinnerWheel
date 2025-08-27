@@ -8,9 +8,8 @@ import { wsService } from '../services/websocket';
 // Styled components for page controls
 const PageControlBar = styled.div`
   position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 20px;
+  left: 20px;
   display: flex;
   gap: 12px;
   background: rgba(0, 0, 0, 0.7);

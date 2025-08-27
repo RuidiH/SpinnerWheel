@@ -190,7 +190,7 @@ class ApiService {
 
   async uploadAdvertisement(file: File, name?: string): Promise<Advertisement> {
     const formData = new FormData();
-    formData.append('advertisement', file);
+    formData.append('image', file);
     if (name) {
       formData.append('name', name);
     }

@@ -327,9 +327,20 @@ const Admin: React.FC = () => {
       }
     });
 
+    // Listen for advertisement events
+    const unsubscribeAdAdded = wsService.on('advertisement_added', (data: any) => {
+      setAdvertisements(prev => [...prev, data]);
+    });
+
+    const unsubscribeAdDeleted = wsService.on('advertisement_deleted', (data: any) => {
+      setAdvertisements(prev => prev.filter(ad => ad.id !== data.id));
+    });
+
     return () => {
       unsubscribe();
       unsubscribePageSwitch();
+      unsubscribeAdAdded();
+      unsubscribeAdDeleted();
       wsService.disconnect();
       
       // Clear any pending debounced API calls to prevent memory leaks
@@ -620,8 +631,8 @@ const Admin: React.FC = () => {
       setError('');
       setSuccess('');
 
-      const result = await apiService.uploadAdvertisement(file, file.name);
-      setAdvertisements([...advertisements, result]);
+      await apiService.uploadAdvertisement(file, file.name);
+      // WebSocket listener will handle updating the advertisements list
       setSuccess('广告上传成功');
 
       // Clear the file input
@@ -649,7 +660,7 @@ const Admin: React.FC = () => {
       setSuccess('');
 
       await apiService.deleteAdvertisement(id);
-      setAdvertisements(advertisements.filter(ad => ad.id !== id));
+      // WebSocket listener will handle updating the advertisements list
       setSuccess('广告删除成功');
 
       setTimeout(() => setSuccess(''), 3000);
@@ -861,7 +872,8 @@ const Admin: React.FC = () => {
           </div>
         </Section>
 
-        {/* Game Mode Selection */}
+        {/* Game Mode Selection - Only shown when on lottery pages */}
+        {(currentPage === 'lottery1' || currentPage === 'lottery2') && (
         <Section>
           <SectionTitle>游戏模式</SectionTitle>
           <ModeSelector>
@@ -941,8 +953,10 @@ const Admin: React.FC = () => {
             </div>
           )}
         </Section>
+        )}
 
-        {/* Basic Settings */}
+        {/* Basic Settings - Only shown when on lottery pages */}
+        {(currentPage === 'lottery1' || currentPage === 'lottery2') && (
         <Section>
           <SectionTitle>基本设置</SectionTitle>
           
@@ -968,8 +982,11 @@ const Admin: React.FC = () => {
             />
           </FormGroup>
         </Section>
+        )}
 
-        {/* Restaurant Management */}
+        {/* Restaurant Management - Only shown when on advertisement page */}
+        {currentPage === 'advertisement' && (
+        <>
         <Section>
           <SectionTitle>餐厅管理</SectionTitle>
           
@@ -1093,7 +1110,7 @@ const Admin: React.FC = () => {
                       <div>
                         <strong>{ad.name}</strong>
                         <div style={{ fontSize: '12px', color: '#666' }}>
-                          {ad.filename} • {new Date(ad.created).toLocaleDateString()}
+                          {ad.filename} • {ad.created ? new Date(ad.created).toLocaleDateString('zh-CN') : '未知日期'}
                         </div>
                       </div>
                       <Button
@@ -1283,8 +1300,11 @@ const Admin: React.FC = () => {
             )}
           </div>
         </Section>
+        </>
+        )}
 
-        {/* Actions */}
+        {/* Actions - Only shown when on lottery pages */}
+        {(currentPage === 'lottery1' || currentPage === 'lottery2') && (
         <Section>
           <SectionTitle>操作</SectionTitle>
           <ButtonGroup>
@@ -1316,6 +1336,7 @@ const Admin: React.FC = () => {
             <small>用于外接物理按键设备控制</small>
           </div>
         </Section>
+        )}
       </ConfigForm>
     </AdminContainer>
   );

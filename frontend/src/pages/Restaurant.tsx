@@ -268,6 +268,31 @@ const LoadingMessage = styled.div`
   color: rgba(255, 255, 255, 0.7);
 `;
 
+const CarouselIndicators = styled.div`
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+`;
+
+const CarouselDot = styled.button<{ $active: boolean }>`
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid white;
+  background: ${props => props.$active ? 'white' : 'transparent'};
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: ${props => props.$active ? 1 : 0.6};
+  
+  &:hover {
+    opacity: 1;
+  }
+`;
+
 const Restaurant: React.FC = () => {
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [restaurantData, setRestaurantData] = useState<RestaurantData | null>(null);
@@ -371,6 +396,11 @@ const Restaurant: React.FC = () => {
     return () => clearInterval(timer);
   }, [restaurantData]);
 
+  // Handle manual navigation to specific ad
+  const handleDotClick = (index: number) => {
+    setCurrentAdIndex(index);
+  };
+
   // Format date and time
   const formatDateTime = (date: Date) => {
     const year = date.getFullYear();
@@ -468,6 +498,19 @@ const Restaurant: React.FC = () => {
                 />
               ) : (
                 <NoAdvertisementText>这个区域轮播广告</NoAdvertisementText>
+              )}
+              
+              {/* Carousel Indicators - Show only when there are multiple ads */}
+              {activeAds.length > 1 && (
+                <CarouselIndicators>
+                  {activeAds.map((_, index) => (
+                    <CarouselDot
+                      key={index}
+                      $active={index === currentAdIndex}
+                      onClick={() => handleDotClick(index)}
+                    />
+                  ))}
+                </CarouselIndicators>
               )}
             </AdvertisementArea>
           </AdvertisementSection>
