@@ -95,26 +95,10 @@ const MainContent = styled.div`
   min-height: 0;
 `;
 
-const Sidebar = styled.div`
-  width: 220px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-`;
-
-const SidebarSection = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 15px;
-  padding: 15px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-`;
-
 const SectionTitle = styled.h2`
-  font-size: 24px;
+  font-size: 17px;
   font-weight: bold;
-  margin: 0 0 15px 0;
+  margin: 0 0 8px 0;
   color: white;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
   display: flex;
@@ -122,20 +106,29 @@ const SectionTitle = styled.h2`
   
   &::before {
     content: '📍';
-    margin-right: 8px;
-    font-size: 20px;
+    margin-right: 5px;
+    font-size: 13px;
   }
 `;
 
-const CenterArea = styled.div`
-  flex: 1;
+const CompactSectionTitle = styled.h3`
+  font-size: 15px;
+  font-weight: bold;
+  margin: 0 0 5px 0;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
   display: flex;
-  flex-direction: row;
-  gap: 15px;
+  align-items: center;
+  
+  &::before {
+    content: '⭐';
+    margin-right: 5px;
+    font-size: 13px;
+  }
 `;
 
 const AdvertisementSection = styled.div`
-  width: 40%;
+  width: 70%;
   display: flex;
   flex-direction: column;
 `;
@@ -149,7 +142,8 @@ const AdvertisementArea = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 450px;
+  min-height: 600px;
+  flex: 1;
   overflow: hidden;
   position: relative;
 `;
@@ -168,95 +162,107 @@ const NoAdvertisementText = styled.div`
   text-align: center;
 `;
 
-const MenuSection = styled.div`
-  width: 60%;
+const RightSidebar = styled.div`
+  width: 30%;
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  min-height: 600px;
 `;
 
 const MenuArea = styled.div`
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 15px;
-  padding: 15px;
+  padding: 10px;
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   flex: 1;
 `;
 
-const MenuGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 10px;
-  margin-top: 10px;
-`;
-
-const MenuItemCard = styled.div<{ $available: boolean }>`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid ${props => props.$available ? 'rgba(0, 255, 0, 0.3)' : 'rgba(128, 128, 128, 0.3)'};
-  border-radius: 8px;
-  padding: 10px;
-  text-align: center;
-  font-size: 12px;
-  min-height: 75px;
+const MenuColumns = styled.div`
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  opacity: ${props => props.$available ? 1 : 0.5};
+  gap: 15px;
+  margin-top: 8px;
 `;
 
-const MenuItemName = styled.div`
-  font-weight: bold;
-  margin-bottom: 4px;
-  color: #ffffff;
-  font-size: 11px;
+const MenuColumn = styled.div`
+  flex: 1;
 `;
 
-const MenuItemPrice = styled.div`
-  color: #667eea;
+const MenuRow = styled.div<{ $isLast?: boolean }>`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: ${props => props.$isLast ? 'none' : '1px solid rgba(255, 255, 255, 0.1)'};
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    padding-left: 4px;
+    transition: all 0.3s ease;
+  }
+`;
+
+const MenuItemName = styled.span`
   font-weight: 500;
-  font-size: 10px;
-`;
-
-const RecommendationItem = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 12px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-`;
-
-const RecommendationName = styled.div`
-  font-weight: bold;
-  font-size: 16px;
   color: #ffffff;
+  font-size: 15px;
+  flex: 1;
+  line-height: 1.3;
+`;
+
+const MenuItemPrice = styled.span`
+  color: #FFD700;
+  font-weight: bold;
+  font-size: 15px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  line-height: 1.3;
+`;
+
+const RecommendationSection = styled.div`
   margin-bottom: 8px;
 `;
 
-const RecommendationDetails = styled.div`
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 6px;
+const RecommendationColumns = styled.div`
+  display: flex;
+  gap: 15px;
+  margin-top: 5px;
 `;
 
-const RecommendationPrice = styled.div`
-  font-weight: bold;
-  font-size: 16px;
-  color: #667eea;
+const RecommendationColumn = styled.div`
+  flex: 1;
 `;
 
-const RecommendationSpecial = styled.div`
-  background: rgba(102, 126, 234, 0.2);
-  border: 1px solid rgba(102, 126, 234, 0.5);
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 12px;
-  color: #667eea;
+const RecommendationItem = styled.div<{ $isLast?: boolean }>`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: ${props => props.$isLast ? 'none' : '1px solid rgba(102, 126, 234, 0.3)'};
+  background: rgba(102, 126, 234, 0.05);
+  padding-left: 4px;
+  padding-right: 4px;
+  
+  &:hover {
+    background: rgba(102, 126, 234, 0.1);
+    transition: all 0.3s ease;
+  }
+`;
+
+const RecommendationName = styled.span`
+  font-weight: 500;
+  font-size: 15px;
+  color: #ffffff;
+  line-height: 1.3;
+`;
+
+const RecommendationPrice = styled.span`
   font-weight: bold;
-  display: inline-block;
-  margin-top: 8px;
+  font-size: 15px;
+  color: #FFD700;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  line-height: 1.3;
 `;
 
 const LoadingMessage = styled.div`
@@ -279,14 +285,16 @@ const CarouselIndicators = styled.div`
 `;
 
 const CarouselDot = styled.button<{ $active: boolean }>`
-  width: 10px;
-  height: 10px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   border: 2px solid white;
   background: ${props => props.$active ? 'white' : 'transparent'};
   cursor: pointer;
   transition: all 0.3s ease;
   opacity: ${props => props.$active ? 1 : 0.6};
+  flex-shrink: 0;
+  box-sizing: border-box;
   
   &:hover {
     opacity: 1;
@@ -401,6 +409,74 @@ const Restaurant: React.FC = () => {
     setCurrentAdIndex(index);
   };
 
+  // Generate menu items with default placeholder dishes
+  const getMenuItemsWithDefaults = () => {
+    const defaultDishes = [
+      { name: '宫保鸡丁', price: 28.50 },
+      { name: '糖醋排骨', price: 35.00 },
+      { name: '麻婆豆腐', price: 22.00 },
+      { name: '回锅肉', price: 32.00 },
+      { name: '鱼香肉丝', price: 26.00 },
+      { name: '水煮牛肉', price: 45.00 },
+      { name: '红烧肉', price: 38.00 },
+      { name: '清蒸鲈鱼', price: 58.00 },
+      { name: '蒜蓉西兰花', price: 18.00 },
+      { name: '番茄炒蛋', price: 16.00 },
+      { name: '青椒肉丝', price: 24.00 },
+      { name: '酸辣土豆丝', price: 14.00 },
+      { name: '蚂蚁上树', price: 20.00 },
+      { name: '毛血旺', price: 42.00 },
+      { name: '香辣虾', price: 48.00 },
+      { name: '糖醋里脊', price: 30.00 },
+      { name: '葱爆羊肉', price: 55.00 },
+      { name: '椒盐排骨', price: 36.00 },
+      { name: '地三鲜', price: 22.00 },
+      { name: '木须肉', price: 25.00 },
+      { name: '口水鸡', price: 28.00 },
+      { name: '辣子鸡丁', price: 32.00 },
+      { name: '醋溜白菜', price: 15.00 },
+      { name: '干煸四季豆', price: 18.00 },
+      { name: '西红柿牛腩', price: 38.00 },
+      { name: '肉末茄子', price: 20.00 },
+      { name: '香菇青菜', price: 16.00 },
+      { name: '蒜泥白肉', price: 35.00 },
+      { name: '白切鸡', price: 45.00 },
+      { name: '干锅花菜', price: 24.00 }
+    ];
+
+    const menuItems = [];
+    
+    // Show menu items that have names (admin controls by entering/removing names)
+    if (restaurantData?.menu_items) {
+      for (let i = 0; i < restaurantData.menu_items.length; i++) {
+        const existingItem = restaurantData.menu_items[i];
+        
+        // Show items that have names
+        if (existingItem && existingItem.name && existingItem.name.trim() !== '') {
+          menuItems.push({
+            id: existingItem.id,
+            name: existingItem.name,
+            price: existingItem.price
+          });
+        }
+      }
+    }
+    
+    // If no items from admin, show default dishes
+    if (menuItems.length === 0) {
+      for (let i = 0; i < Math.min(defaultDishes.length, 30); i++) {
+        const defaultDish = defaultDishes[i];
+        menuItems.push({
+          id: `default_${i + 1}`,
+          name: defaultDish.name,
+          price: defaultDish.price
+        });
+      }
+    }
+    
+    return menuItems; // Return items with names (admin controls by adding/removing names)
+  };
+
   // Format date and time
   const formatDateTime = (date: Date) => {
     const year = date.getFullYear();
@@ -460,79 +536,85 @@ const Restaurant: React.FC = () => {
       </Header>
 
       <MainContent>
-        <Sidebar>
-          <SidebarSection>
-            <SectionTitle>今日推荐</SectionTitle>
-            {activeRecommendations.length > 0 ? (
-              activeRecommendations.map((rec) => (
-                <RecommendationItem key={rec.id}>
-                  <RecommendationName>{rec.name}</RecommendationName>
-                  {rec.description && (
-                    <RecommendationDetails>{rec.description}</RecommendationDetails>
-                  )}
-                  <RecommendationPrice>¥{rec.price.toFixed(2)}</RecommendationPrice>
-                  {rec.special && (
-                    <RecommendationSpecial>{rec.special}</RecommendationSpecial>
-                  )}
-                </RecommendationItem>
-              ))
+        <AdvertisementSection>
+          <AdvertisementArea>
+            {currentAd ? (
+              <AdvertisementImage
+                src={`/uploads/${currentAd.filename}`}
+                alt={currentAd.name}
+                onError={(e) => {
+                  console.error('Failed to load advertisement image:', currentAd.filename);
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             ) : (
-              <div style={{ color: 'rgba(255, 255, 255, 0.6)', textAlign: 'center', padding: '20px 0' }}>
-                暂无推荐菜品
-              </div>
+              <NoAdvertisementText>这个区域轮播广告</NoAdvertisementText>
             )}
-          </SidebarSection>
-        </Sidebar>
-
-        <CenterArea>
-          <AdvertisementSection>
-            <AdvertisementArea>
-              {currentAd ? (
-                <AdvertisementImage
-                  src={`/uploads/${currentAd.filename}`}
-                  alt={currentAd.name}
-                  onError={(e) => {
-                    console.error('Failed to load advertisement image:', currentAd.filename);
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              ) : (
-                <NoAdvertisementText>这个区域轮播广告</NoAdvertisementText>
-              )}
-              
-              {/* Carousel Indicators - Show only when there are multiple ads */}
-              {activeAds.length > 1 && (
-                <CarouselIndicators>
-                  {activeAds.map((_, index) => (
-                    <CarouselDot
-                      key={index}
-                      $active={index === currentAdIndex}
-                      onClick={() => handleDotClick(index)}
-                    />
-                  ))}
-                </CarouselIndicators>
-              )}
-            </AdvertisementArea>
-          </AdvertisementSection>
-
-          <MenuSection>
-            <MenuArea>
-              <SectionTitle>菜单</SectionTitle>
-              <MenuGrid>
-                {restaurantData.menu_items.slice(0, 30).map((item, index) => (
-                  <MenuItemCard key={item.id} $available={item.available && item.name.trim() !== ''}>
-                    <MenuItemName>
-                      {item.name.trim() || `菜品${index + 1}`}
-                    </MenuItemName>
-                    {item.price > 0 && (
-                      <MenuItemPrice>¥{item.price.toFixed(2)}</MenuItemPrice>
-                    )}
-                  </MenuItemCard>
+            
+            {/* Carousel Indicators - Show only when there are multiple ads */}
+            {activeAds.length > 1 && (
+              <CarouselIndicators>
+                {activeAds.map((_, index) => (
+                  <CarouselDot
+                    key={index}
+                    $active={index === currentAdIndex}
+                    onClick={() => handleDotClick(index)}
+                  />
                 ))}
-              </MenuGrid>
-            </MenuArea>
-          </MenuSection>
-        </CenterArea>
+              </CarouselIndicators>
+            )}
+          </AdvertisementArea>
+        </AdvertisementSection>
+
+        <RightSidebar>
+          {/* Recommendations Section - Minimal wrapper, only show if there are recommendations */}
+          {activeRecommendations.length > 0 && (
+            <RecommendationSection>
+              <CompactSectionTitle>今日推荐</CompactSectionTitle>
+              <RecommendationColumns>
+                <RecommendationColumn>
+                  {activeRecommendations.slice(0, Math.ceil(activeRecommendations.length / 2)).map((rec, index, arr) => (
+                    <RecommendationItem key={rec.id} $isLast={index === arr.length - 1}>
+                      <RecommendationName>{rec.name}</RecommendationName>
+                      <RecommendationPrice>¥{rec.price.toFixed(2)}</RecommendationPrice>
+                    </RecommendationItem>
+                  ))}
+                </RecommendationColumn>
+                <RecommendationColumn>
+                  {activeRecommendations.slice(Math.ceil(activeRecommendations.length / 2)).map((rec, index, arr) => (
+                    <RecommendationItem key={rec.id} $isLast={index === arr.length - 1}>
+                      <RecommendationName>{rec.name}</RecommendationName>
+                      <RecommendationPrice>¥{rec.price.toFixed(2)}</RecommendationPrice>
+                    </RecommendationItem>
+                  ))}
+                </RecommendationColumn>
+              </RecommendationColumns>
+            </RecommendationSection>
+          )}
+
+          {/* Menu Section */}
+          <MenuArea>
+            <SectionTitle>菜单</SectionTitle>
+            <MenuColumns>
+              <MenuColumn>
+                {getMenuItemsWithDefaults().slice(0, 15).map((item, index) => (
+                  <MenuRow key={item.id} $isLast={index === 14}>
+                    <MenuItemName>{item.name}</MenuItemName>
+                    <MenuItemPrice>¥{item.price.toFixed(2)}</MenuItemPrice>
+                  </MenuRow>
+                ))}
+              </MenuColumn>
+              <MenuColumn>
+                {getMenuItemsWithDefaults().slice(15, 30).map((item, index) => (
+                  <MenuRow key={item.id} $isLast={index === 14}>
+                    <MenuItemName>{item.name}</MenuItemName>
+                    <MenuItemPrice>¥{item.price.toFixed(2)}</MenuItemPrice>
+                  </MenuRow>
+                ))}
+              </MenuColumn>
+            </MenuColumns>
+          </MenuArea>
+        </RightSidebar>
       </MainContent>
     </RestaurantContainer>
   );

@@ -157,27 +157,29 @@ const Display: React.FC = () => {
 
   return (
     <>
-      {/* Page Control Bar */}
-      <PageControlBar>
-        <PageButton 
-          $active={currentPage === 'lottery1'}
-          onClick={() => handlePageSwitch('lottery1')}
-        >
-          抽奖模式 1
-        </PageButton>
-        <PageButton 
-          $active={currentPage === 'lottery2'}
-          onClick={() => handlePageSwitch('lottery2')}
-        >
-          抽奖模式2
-        </PageButton>
-        <PageButton 
-          $active={currentPage === 'advertisement'}
-          onClick={() => handlePageSwitch('advertisement')}
-        >
-          广告展示
-        </PageButton>
-      </PageControlBar>
+      {/* Page Control Bar - Only show on lottery pages */}
+      {currentPage !== 'advertisement' && (
+        <PageControlBar>
+          <PageButton 
+            $active={currentPage === 'lottery1'}
+            onClick={() => handlePageSwitch('lottery1')}
+          >
+            抽奖模式 1
+          </PageButton>
+          <PageButton 
+            $active={currentPage === 'lottery2'}
+            onClick={() => handlePageSwitch('lottery2')}
+          >
+            抽奖模式2
+          </PageButton>
+          <PageButton 
+            $active={currentPage === 'advertisement'}
+            onClick={() => handlePageSwitch('advertisement')}
+          >
+            广告展示
+          </PageButton>
+        </PageControlBar>
+      )}
 
       {/* Current Page Content */}
       {renderCurrentPage()}

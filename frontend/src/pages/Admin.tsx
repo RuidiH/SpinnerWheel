@@ -247,6 +247,40 @@ const Admin: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [currentPage, setCurrentPage] = useState('lottery1');
 
+  // Default placeholder dishes - same as used in Restaurant display
+  const defaultDishes = [
+    { name: '宫保鸡丁', price: 28.50 },
+    { name: '糖醋排骨', price: 35.00 },
+    { name: '麻婆豆腐', price: 22.00 },
+    { name: '回锅肉', price: 32.00 },
+    { name: '鱼香肉丝', price: 26.00 },
+    { name: '水煮牛肉', price: 45.00 },
+    { name: '红烧肉', price: 38.00 },
+    { name: '清蒸鲈鱼', price: 58.00 },
+    { name: '蒜蓉西兰花', price: 18.00 },
+    { name: '番茄炒蛋', price: 16.00 },
+    { name: '青椒肉丝', price: 24.00 },
+    { name: '酸辣土豆丝', price: 14.00 },
+    { name: '蚂蚁上树', price: 20.00 },
+    { name: '毛血旺', price: 42.00 },
+    { name: '香辣虾', price: 48.00 },
+    { name: '糖醋里脊', price: 30.00 },
+    { name: '葱爆羊肉', price: 55.00 },
+    { name: '椒盐排骨', price: 36.00 },
+    { name: '地三鲜', price: 22.00 },
+    { name: '木须肉', price: 25.00 },
+    { name: '口水鸡', price: 28.00 },
+    { name: '辣子鸡丁', price: 32.00 },
+    { name: '醋溜白菜', price: 15.00 },
+    { name: '干煸四季豆', price: 18.00 },
+    { name: '西红柿牛腩', price: 38.00 },
+    { name: '肉末茄子', price: 20.00 },
+    { name: '香菇青菜', price: 16.00 },
+    { name: '蒜泥白肉', price: 35.00 },
+    { name: '白切鸡', price: 45.00 },
+    { name: '干锅花菜', price: 24.00 }
+  ];
+
   // Form state
   const [currentPlayer, setCurrentPlayer] = useState(1);
   const [remainingSpins, setRemainingSpins] = useState(100);
@@ -288,7 +322,33 @@ const Admin: React.FC = () => {
       setAdRotationTime(restaurantDataResult.config.ad_rotation_time);
       setAutoSwitchTime(restaurantDataResult.config.auto_switch_time);
       setAdvertisements(restaurantDataResult.advertisements || []);
-      setMenuItems(restaurantDataResult.menu_items || []);
+      // Initialize menu items - preserve actual backend data (including empty items)
+      const backendMenuItems = restaurantDataResult.menu_items || [];
+      const menuItemsForAdmin = [];
+      
+      for (let i = 0; i < 30; i++) {
+        const existingItem = backendMenuItems[i];
+        
+        if (existingItem) {
+          // Backend has data for this slot - use it as-is (even if empty)
+          menuItemsForAdmin.push(existingItem);
+        } else {
+          // No backend data for this slot - use default dish
+          const defaultDish = defaultDishes[i];
+          menuItemsForAdmin.push({
+            id: `menu_${i + 1}`,
+            name: defaultDish.name,
+            price: defaultDish.price,
+            description: '',
+            category: '主菜',
+            available: true,
+            order: i + 1,
+            image_url: ''
+          });
+        }
+      }
+      
+      setMenuItems(menuItemsForAdmin);
       setRecommendations(restaurantDataResult.recommendations || []);
       
       setError('');
@@ -688,6 +748,7 @@ const Admin: React.FC = () => {
     // Set up debounced API call
     const newTimeout = setTimeout(async () => {
       try {
+        // Always use updateMenuItem - backend should handle both existing and new items
         await apiService.updateMenuItem(id, updated);
         // Optionally show brief success feedback (commented out to reduce noise)
         // setSuccess(`菜品 ${updated.name || '未命名'} 已更新`);
@@ -715,13 +776,14 @@ const Admin: React.FC = () => {
     });
   }, [menuItems, menuUpdateTimeouts]);
 
+
   // Handle add recommendation
   const handleAddRecommendation = async () => {
     const newRec: Omit<Recommendation, 'id' | 'date'> = {
       name: '',
       price: 0,
       description: '',
-      special: '今日特价',
+      special: '',
       active: true,
       order: recommendations.length + 1
     };
@@ -1153,10 +1215,14 @@ const Admin: React.FC = () => {
                 border: '1px solid #e1e5e9',
                 borderRadius: '8px',
                 padding: '12px',
-                background: item.available ? '#f8f9fa' : '#fff5f5'
+                background: '#f8f9fa'
               }}>
-                <div style={{ fontWeight: '600', marginBottom: '8px', fontSize: '14px' }}>
-                  菜品 {i + 1}
+                <div style={{ 
+                  fontWeight: '600', 
+                  marginBottom: '8px', 
+                  fontSize: '14px' 
+                }}>
+                  <span>菜品 {i + 1}</span>
                 </div>
                 <FormGroup style={{ marginBottom: '8px' }}>
                   <Input
@@ -1164,7 +1230,10 @@ const Admin: React.FC = () => {
                     placeholder="菜品名称"
                     value={item.name}
                     onChange={(e) => handleMenuItemUpdate(item.id, 'name', e.target.value)}
-                    style={{ fontSize: '14px', padding: '6px 8px' }}
+                    style={{ 
+                      fontSize: '14px', 
+                      padding: '6px 8px'
+                    }}
                   />
                 </FormGroup>
                 <FormGroup style={{ marginBottom: '8px' }}>
@@ -1175,26 +1244,12 @@ const Admin: React.FC = () => {
                     min="0"
                     value={item.price || ''}
                     onChange={(e) => handleMenuItemUpdate(item.id, 'price', parseFloat(e.target.value) || 0)}
-                    style={{ fontSize: '14px', padding: '6px 8px' }}
+                    style={{ 
+                      fontSize: '14px', 
+                      padding: '6px 8px'
+                    }}
                   />
                 </FormGroup>
-                <FormGroup style={{ marginBottom: '8px' }}>
-                  <Input
-                    type="text"
-                    placeholder="描述"
-                    value={item.description}
-                    onChange={(e) => handleMenuItemUpdate(item.id, 'description', e.target.value)}
-                    style={{ fontSize: '14px', padding: '6px 8px' }}
-                  />
-                </FormGroup>
-                <div style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={item.available}
-                    onChange={(e) => handleMenuItemUpdate(item.id, 'available', e.target.checked)}
-                  />
-                  <span>可用</span>
-                </div>
               </div>
             ))}
           </div>
@@ -1276,24 +1331,6 @@ const Admin: React.FC = () => {
                         删除
                       </Button>
                     </div>
-                    <FormGroup style={{ marginTop: '12px', marginBottom: '8px' }}>
-                      <Input
-                        type="text"
-                        placeholder="描述"
-                        value={rec.description}
-                        onChange={(e) => handleUpdateRecommendation(rec.id, 'description', e.target.value)}
-                        style={{ fontSize: '14px' }}
-                      />
-                    </FormGroup>
-                    <FormGroup style={{ margin: 0 }}>
-                      <Input
-                        type="text"
-                        placeholder="特色标签 (如: 今日特价)"
-                        value={rec.special}
-                        onChange={(e) => handleUpdateRecommendation(rec.id, 'special', e.target.value)}
-                        style={{ fontSize: '14px' }}
-                      />
-                    </FormGroup>
                   </div>
                 ))}
               </div>
