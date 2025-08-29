@@ -3,6 +3,7 @@
 export interface GameConfig {
   mode: number;
   mode1_options: PrizeOption[];
+  mode2_win_text: string;
   current_player: number;
   remaining_spins: number;
   total_spins: number;
@@ -29,6 +30,7 @@ export interface SpinHistory {
 export interface ConfigUpdateRequest {
   mode?: number;
   mode1_options?: PrizeOption[];
+  mode2_win_text?: string;
   current_player?: number;
   remaining_spins?: number;
 }

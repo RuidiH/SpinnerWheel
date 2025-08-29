@@ -72,6 +72,9 @@ func (h *APIHandler) UpdateConfig(c *gin.Context) {
 	if updateReq.Mode1Options != nil {
 		config.Mode1Options = updateReq.Mode1Options
 	}
+	if updateReq.Mode2WinText != nil {
+		config.Mode2WinText = *updateReq.Mode2WinText
+	}
 	if updateReq.CurrentPlayer != nil {
 		config.CurrentPlayer = *updateReq.CurrentPlayer
 	}
@@ -133,7 +136,7 @@ func (h *APIHandler) Spin(c *gin.Context) {
 		winningIndex, winningPrize = h.spinMode1(config.Mode1Options)
 	} else {
 		// Mode 2: Simple 5% win rate
-		winningIndex, winningPrize = h.spinMode2()
+		winningIndex, winningPrize = h.spinMode2(config)
 	}
 
 	// Create spin result
@@ -244,17 +247,17 @@ func (h *APIHandler) spinMode1(options []models.PrizeOption) (int, string) {
 }
 
 // spinMode2 handles mode 2 spinning logic (fixed 5% win rate)
-func (h *APIHandler) spinMode2() (int, string) {
+func (h *APIHandler) spinMode2(config *models.GameConfig) (int, string) {
 	// 5% chance to win
 	if rand.Float64() < 0.05 {
 		// Winner! Place at random winning position
 		winIndex := rand.Intn(12) // Any of the 12 segments can be winner
-		return winIndex, "中奖了!"
+		return winIndex, config.Mode2WinText
 	}
 
 	// No win - place at random non-winning position
 	loseIndex := rand.Intn(12)
-	return loseIndex, "没中奖"
+	return loseIndex, "再接再厉"
 }
 
 // handleAutoSwitchAfterSpin handles automatic page switching after spin completion

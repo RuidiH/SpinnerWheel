@@ -286,6 +286,7 @@ const Admin: React.FC = () => {
   const [remainingSpins, setRemainingSpins] = useState(100);
   const [selectedMode, setSelectedMode] = useState(1);
   const [mode1Options, setMode1Options] = useState<PrizeOption[]>([]);
+  const [mode2WinText, setMode2WinText] = useState('中奖了!');
 
   // Restaurant management state
   const [restaurantData, setRestaurantData] = useState<RestaurantData | null>(null);
@@ -314,6 +315,7 @@ const Admin: React.FC = () => {
       setRemainingSpins(configData.remaining_spins);
       setSelectedMode(configData.mode);
       setMode1Options(configData.mode1_options || []);
+      setMode2WinText(configData.mode2_win_text || '中奖了!');
       setCurrentPage(configData.current_page || 'lottery1');
       
       // Update restaurant data state
@@ -373,6 +375,7 @@ const Admin: React.FC = () => {
       setRemainingSpins(data.remaining_spins);
       setSelectedMode(data.mode);
       setMode1Options(data.mode1_options || []);
+      setMode2WinText(data.mode2_win_text || '中奖了!');
       setCurrentPage(data.current_page || 'lottery1');
     });
 
@@ -384,6 +387,7 @@ const Admin: React.FC = () => {
         setRemainingSpins(data.config.remaining_spins);
         setSelectedMode(data.config.mode);
         setMode1Options(data.config.mode1_options || []);
+        setMode2WinText(data.config.mode2_win_text || '中奖了!');
       }
     });
 
@@ -558,6 +562,14 @@ const Admin: React.FC = () => {
 
       if (selectedMode === 1) {
         updateRequest.mode1_options = mode1Options;
+      }
+      
+      if (selectedMode === 2) {
+        // Validate mode2 win text
+        if (!mode2WinText.trim()) {
+          throw new Error('中奖文本不能为空');
+        }
+        updateRequest.mode2_win_text = mode2WinText;
       }
 
       // Save configuration
@@ -998,17 +1010,34 @@ const Admin: React.FC = () => {
           {selectedMode === 2 && (
             <div>
               <p style={{ color: '#666', marginBottom: '16px' }}>
-                固定模式：11个"没中奖" + 1个"中奖了!"，总中奖率5%
+                固定模式：11个"再接再厉"，自定义中奖奖品，总中奖率5%
               </p>
+              
+              <FormGroup style={{ marginBottom: '20px' }}>
+                <Label htmlFor="mode2WinText">中奖奖品内容</Label>
+                <Input
+                  id="mode2WinText"
+                  type="text"
+                  placeholder="输入中奖时显示的奖品内容"
+                  value={mode2WinText}
+                  onChange={(e) => setMode2WinText(e.target.value)}
+                />
+                <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                  当用户中奖时，将显示此奖品内容
+                </small>
+              </FormGroup>
+
               <Mode2Display>
                 {Array.from({ length: 11 }, (_, i) => (
                   <Mode2Item key={i}>
-                    <span>没中奖</span>
+                    <span>再接再厉</span>
                     <span style={{ color: '#666' }}>~8.64%</span>
                   </Mode2Item>
                 ))}
                 <Mode2Item>
-                  <span style={{ color: '#00b894', fontWeight: '600' }}>中奖了!</span>
+                  <span style={{ color: '#00b894', fontWeight: '600' }}>
+                    {mode2WinText || '中奖了!'}
+                  </span>
                   <span style={{ color: '#00b894', fontWeight: '600' }}>5%</span>
                 </Mode2Item>
               </Mode2Display>

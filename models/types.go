@@ -9,6 +9,7 @@ import (
 type GameConfig struct {
 	Mode           int              `json:"mode"`                     // 1 or 2
 	Mode1Options   []PrizeOption    `json:"mode1_options"`           // Options for mode 1
+	Mode2WinText   string           `json:"mode2_win_text"`          // Custom winning text for mode 2
 	CurrentPlayer  int              `json:"current_player"`          // Current player number
 	RemainingSpins int              `json:"remaining_spins"`         // Remaining spins
 	TotalSpins     int              `json:"total_spins"`             // Total spins counter
@@ -50,6 +51,7 @@ type SpinRequest struct {
 type ConfigUpdateRequest struct {
 	Mode           *int             `json:"mode,omitempty"`
 	Mode1Options   []PrizeOption    `json:"mode1_options,omitempty"`
+	Mode2WinText   *string          `json:"mode2_win_text,omitempty"`
 	CurrentPlayer  *int             `json:"current_player,omitempty"`
 	RemainingSpins *int             `json:"remaining_spins,omitempty"`
 	CurrentPage    *string          `json:"current_page,omitempty"`
@@ -116,6 +118,7 @@ type PageSwitchRequest struct {
 func GetDefaultConfig() *GameConfig {
 	return &GameConfig{
 		Mode:           1,
+		Mode2WinText:   "中奖了!", // Default winning text for mode 2
 		CurrentPlayer:  1,
 		RemainingSpins: 100,
 		TotalSpins:     0,
@@ -174,7 +177,7 @@ func generateDefaultMenuItems() []MenuItem {
 func GetMode2Options() []PrizeOption {
 	options := make([]PrizeOption, 12)
 	for i := 0; i < 11; i++ {
-		options[i] = PrizeOption{Text: "没中奖", Probability: 95.0 / 11} // ~8.64% each
+		options[i] = PrizeOption{Text: "再接再厉", Probability: 95.0 / 11} // ~8.64% each
 	}
 	options[11] = PrizeOption{Text: "中奖了!", Probability: 5.0} // 5% win chance
 	return options
