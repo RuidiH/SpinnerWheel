@@ -1,42 +1,87 @@
-# Generated/built files
+# Build Artifacts
 /static/
-/spinner-wheel.exe
 *.exe
+*.exe~
+spinner-wheel
+test.exe
 
-# Runtime data - contains user-specific configurations and history
+# Development Dependencies  
+node_modules/
+.npm
+.pnpm-store/
+
+# Frontend Build
+frontend/build/
+frontend/node_modules/
+
+# Runtime Data
 /data/
+data/config.json
+data/history.json
+data/restaurant.json
+data/uploads/
 
-# Go dependencies
+# Go Dependencies
 /vendor/
 
-# IDE files
+# IDE Files
 .idea/
 .vscode/
 .claude/
 *.swp
 *.swo
 *~
+
+# OS Files
 .DS_Store
-
-# Test files
-*.test
-*.out
-
-# Log files
-*.log
-
-# Temporary files
-*.tmp
-*.temp
-*.jpg
-*.png
-*.gif
-*.bmp
-test_*
-
-# OS generated files
 Thumbs.db
 ehthumbs.db
+Desktop.ini
 
-# Go build cache
+# Test Files
+*.test
+*.out
+test_*
+
+# Log Files
+*.log
+logs/
+
+# Temporary Files
+*.tmp
+*.temp
+*.cache
+
+# Build Cache
 .cache/
+.gocache/
+
+# Environment Files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Archive/Feedback Files
+archive/
+feedback*.txt
+feedback*.jpg
+feedback*.png
+feedback*.gif
+feedback*.bmp
+
+# Coverage Reports
+coverage/
+*.coverage
+*.lcov
+
+# Package Manager Files
+package-lock.json
+yarn.lock
+
+# React Dev Server
+.eslintcache
+
+# Auto-generated Templates (Go fallback)
+templates/

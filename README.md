@@ -11,13 +11,13 @@ A real-time web-based spinner wheel lottery application with three-page system, 
 1. **首次构建 / First Build**
    ```bash
    # 双击或运行 / Double-click or run
-   build.bat
+   scripts/build.bat
    ```
 
 2. **启动应用 / Start Application** 
    ```bash
    # 双击或运行 / Double-click or run
-   START.bat
+   scripts/START.bat
    ```
 
 3. **打开浏览器 / Open Browser**
@@ -45,15 +45,21 @@ A real-time web-based spinner wheel lottery application with three-page system, 
 
 ```
 SpinnerWheel/
-├── START.bat           # 一键启动脚本
-├── build.bat          # 构建脚本  
-├── clean.bat          # 清理脚本
-├── main.go            # 后端入口
-├── frontend/          # React前端源码
-├── handlers/          # API处理器
-├── models/           # 数据模型
-├── storage/          # 数据存储
-└── data/             # 运行时数据文件
+├── main.go                # 后端入口
+├── handlers/              # API处理器
+├── models/               # 数据模型
+├── storage/              # 数据存储
+├── frontend/             # React前端源码
+├── static/              # 生产构建文件
+├── data/                # 运行时数据文件
+├── scripts/             # 构建和启动脚本
+│   ├── build.bat        # 构建脚本
+│   └── START.bat        # 一键启动脚本
+├── docs/               # 项目文档
+│   ├── DEVELOPMENT.md   # 开发指南
+│   └── DEPLOYMENT.md    # 部署指南
+└── examples/           # 配置示例
+    └── config.example.json
 ```
 
 ## 🔧 系统要求 / System Requirements
@@ -66,13 +72,19 @@ SpinnerWheel/
 
 ### 开发模式 / Development Mode
 ```bash
-run.bat              # 开发服务器
-clean.bat           # 清理构建文件
+npm run dev          # 开发服务器 (推荐)
+npm run dev:backend  # 仅后端服务器
+npm run dev:frontend # 仅前端服务器 (端口3000)
+npm run clean        # 清理构建文件
 ```
+
+> 💡 **开发提示**: 开发时访问 `http://localhost:3000` 可实现热重载，API自动代理到8080端口  
+> 💡 **Dev Tip**: Access `http://localhost:3000` during development for hot reload, API calls auto-proxy to port 8080
 
 ### 生产部署 / Production Deployment  
 ```bash
-package.bat         # 创建部署包
+npm run build:full  # 完整构建 (前端+后端)
+npm run start        # 启动生产服务器
 ```
 
 ## 🛠️ 故障排除 / Troubleshooting
@@ -92,9 +104,9 @@ package.bat         # 创建部署包
 
 ## 📚 更多文档 / More Documentation
 
-- `DEVELOPMENT.md` - 开发者指南
-- `DEPLOYMENT.md` - 部署指南  
-- `feedback.txt` - 客户反馈记录
+- `docs/DEVELOPMENT.md` - 开发者指南
+- `docs/DEPLOYMENT.md` - 部署指南
+- `docs/CLEANUP.md` - 项目结构清理记录
 
 ---
 

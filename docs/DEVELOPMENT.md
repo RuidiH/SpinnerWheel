@@ -1,5 +1,69 @@
 # 开发者指南 / Developer Guide
 
+## 🚨 **重要：前端更改实时预览 / IMPORTANT: Live Frontend Changes**
+
+### ❌ **我们遇到的问题 / The Problem We Had**
+多次出现前端更改不能实时看到的问题，因为我们：
+1. 访问 `http://localhost:8080` (Go服务器)
+2. 手动运行 `npm run build` 和复制文件
+
+**We kept making frontend changes that weren't visible because we were:**
+1. Accessing `http://localhost:8080` (Go server)  
+2. Manually building and copying files
+
+### ✅ **正确的开发流程 / Correct Development Workflow**
+
+#### 开发模式 (热重载) / Development Mode (Hot Reload)
+```bash
+# 方案1: 使用新的开发脚本 / Option 1: Use our dev script
+npm run dev
+
+# 方案2: 手动启动两个终端 / Option 2: Manual in separate terminals
+# 终端1: 启动React开发服务器 (端口3000) / Terminal 1: React dev server (port 3000)
+cd frontend && npm start
+
+# 终端2: 启动Go后端 (端口8080) / Terminal 2: Go backend (port 8080)  
+go run main.go
+```
+
+**然后访问 / Then access:** `http://localhost:3000` (不是8080!)
+- ✅ 前端更改立即生效 (热重载) / Frontend changes appear instantly (hot reload)
+- ✅ API调用自动代理到Go后端 / API calls automatically proxy to Go backend
+- ✅ 无需手动构建步骤 / No manual build steps needed
+
+#### 生产模式 / Production Mode
+```bash
+# 构建并启动静态文件服务器 / Build and serve static files
+npm run production
+```
+访问 / Access: `http://localhost:8080`
+
+### 📁 **文件结构理解 / File Structure Understanding**
+```
+SpinnerWheel/
+├── frontend/
+│   ├── src/           # ← 编辑这些文件 / Edit these files
+│   ├── build/         # ← 构建输出 (自动生成) / Build output (auto-generated)  
+│   └── package.json   # ← 有代理配置: "proxy": "http://localhost:8080"
+├── static/            # ← Go服务器从这里提供文件 (生产) / Go serves from here (production)
+└── main.go           # ← Go后端服务器 / Go backend server
+```
+
+### 🔄 **代理工作原理 / How the Proxy Works**
+- **开发 / Development:** React开发服务器 (端口3000) → 代理API调用 → Go服务器 (端口8080)
+- **生产 / Production:** Go服务器 (端口8080) → 从 `./static/` 提供静态文件
+
+### 📝 **可用脚本 / Available Scripts**
+```bash
+npm run dev              # 同时启动前后端 (推荐) / Start both frontend + backend (recommended)
+npm run dev:frontend     # 仅启动React开发服务器 / Start only React dev server
+npm run dev:backend      # 仅启动Go服务器 / Start only Go server  
+npm run build:production # 构建前端 + 复制到static/ / Build frontend + copy to static/
+npm run production       # 构建 + 启动生产服务器 / Build + start production server
+```
+
+---
+
 ## 🏗️ 开发环境设置 / Development Environment Setup
 
 ### 必需工具 / Required Tools
