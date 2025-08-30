@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback, Fragment } from 'react';
+import React, { useState, useEffect, useCallback, Fragment, useMemo } from 'react';
 import styled from 'styled-components';
 import { 
   apiService, 
   GameConfig, 
   PrizeOption, 
   ConfigUpdateRequest, 
-  RestaurantData,
   RestaurantConfig,
   Advertisement,
   MenuItem,
@@ -220,25 +219,6 @@ const LoadingMessage = styled.div`
   margin: 40px 0;
 `;
 
-const Mode2Display = styled.div`
-  background: #f8f9fa;
-  border: 2px solid #e1e5e9;
-  border-radius: 8px;
-  padding: 20px;
-  margin-top: 16px;
-`;
-
-const Mode2Item = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #e1e5e9;
-  
-  &:last-child {
-    border-bottom: none;
-  }
-`;
 
 const SpinningOverlay = styled.div`
   position: fixed;
@@ -288,7 +268,7 @@ const Admin: React.FC = () => {
   const [isSpinning, setIsSpinning] = useState(false);
 
   // Default placeholder dishes - same as used in Restaurant display
-  const defaultDishes = [
+  const defaultDishes = useMemo(() => [
     { name: '宫保鸡丁', price: 28.50 },
     { name: '糖醋排骨', price: 35.00 },
     { name: '麻婆豆腐', price: 22.00 },
@@ -319,7 +299,7 @@ const Admin: React.FC = () => {
     { name: '蒜泥白肉', price: 35.00 },
     { name: '白切鸡', price: 45.00 },
     { name: '干锅花菜', price: 24.00 }
-  ];
+  ], []);
 
   // Form state
   const [currentPlayer, setCurrentPlayer] = useState(1);
@@ -331,7 +311,6 @@ const Admin: React.FC = () => {
   const [mode2WinRate, setMode2WinRate] = useState(8.33);
 
   // Restaurant management state
-  const [restaurantData, setRestaurantData] = useState<RestaurantData | null>(null);
   const [restaurantName, setRestaurantName] = useState('XX土菜馆');
   const [adRotationTime, setAdRotationTime] = useState(10);
   const [autoSwitchTime, setAutoSwitchTime] = useState(30);
@@ -363,7 +342,6 @@ const Admin: React.FC = () => {
       setCurrentPage(configData.current_page || 'lottery1');
       
       // Update restaurant data state
-      setRestaurantData(restaurantDataResult);
       setRestaurantName(restaurantDataResult.config.name);
       setAdRotationTime(restaurantDataResult.config.ad_rotation_time);
       setAutoSwitchTime(restaurantDataResult.config.auto_switch_time);
@@ -404,7 +382,7 @@ const Admin: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [defaultDishes]);
 
   // Initialize
   useEffect(() => {
@@ -495,7 +473,7 @@ const Admin: React.FC = () => {
       menuUpdateTimeouts.forEach(timeout => clearTimeout(timeout));
       recommendationUpdateTimeouts.forEach(timeout => clearTimeout(timeout));
     };
-  }, [loadConfig]);
+  }, [loadConfig]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initialize mode1 options if empty
   useEffect(() => {
@@ -567,7 +545,7 @@ const Admin: React.FC = () => {
         clearTimeout(keyComboTimeout);
       }
     };
-  }, [currentPage]); // Add currentPage dependency to re-register when page changes
+  }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle keyboard-triggered spin
   const handleKeyboardSpin = async () => {

@@ -6,14 +6,14 @@
     "dev": "concurrently -n \"REACT,GO\" -c \"cyan,green\" \"npm run dev:frontend\" \"npm run dev:backend\"",
     "dev:frontend": "cd frontend && npm start",
     "dev:backend": "go run main.go",
-    "build": "cd frontend && npm run build && cd .. && mkdir -p static && cp -r frontend/build/* static/",
-    "build:clean": "rm -rf static && npm run build",
+    "build": "cd frontend && npm run build && cd .. && (if not exist static mkdir static) && xcopy frontend\\build\\* static\\ /E /I /Y",
+    "build:clean": "(if exist static rmdir /s /q static) && npm run build",
     "build:exe": "go build -o spinner-wheel.exe",
     "build:full": "npm run build:clean && npm run build:exe",
     "start": "scripts\\START.bat",
     "production": "npm run build:clean && go run main.go",
     "setup": "cd frontend && npm install && cd .. && npm install",
-    "clean": "rm -rf frontend/build static node_modules frontend/node_modules *.exe"
+    "clean": "(if exist frontend\\build rmdir /s /q frontend\\build) && (if exist static rmdir /s /q static) && (if exist node_modules rmdir /s /q node_modules) && (if exist frontend\\node_modules rmdir /s /q frontend\\node_modules) && (if exist *.exe del *.exe)"
   },
   "devDependencies": {
     "concurrently": "^7.6.0"

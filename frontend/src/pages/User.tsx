@@ -371,7 +371,7 @@ const User: React.FC<UserProps> = ({ forcedMode }) => {
       stopHttpPolling();
       wsService.disconnect();
     };
-  }, []); // Empty dependency array for one-time setup
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle spin request
   const handleSpin = async () => {
@@ -381,6 +381,12 @@ const User: React.FC<UserProps> = ({ forcedMode }) => {
 
     try {
       setError('');
+      
+      // Ensure audio is unlocked for future automatic playback
+      if (window.AudioManager?.ensureUnlocked) {
+        window.AudioManager.ensureUnlocked();
+      }
+      
       await apiService.spin();
     } catch (err: any) {
       console.error('Spin failed:', err);

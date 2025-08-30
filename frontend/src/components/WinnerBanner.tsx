@@ -12,14 +12,6 @@ const slideIn = keyframes`
   }
 `;
 
-const pulse = keyframes`
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-`;
 
 const Banner = styled.div`
   position: fixed;
@@ -98,6 +90,22 @@ const WinnerBanner: React.FC<WinnerBannerProps> = ({ player, prize, mode, onClos
     }, 5000);
     return () => clearTimeout(timer);
   }, [onClose]);
+
+  // Auto-play audio if enabled
+  React.useEffect(() => {
+    const autoPlay = () => {
+      if (window.AudioManager?.isEnabled()) {
+        console.log('🎵 Auto-playing audio for winner:', { player, prize, mode });
+        window.AudioManager.announce(player, prize, mode);
+      } else {
+        console.log('🎵 Audio not enabled, skipping auto-play');
+      }
+    };
+
+    // Small delay to ensure banner is visible before audio
+    const timer = setTimeout(autoPlay, 300);
+    return () => clearTimeout(timer);
+  }, [player, prize, mode]);
   const handlePlayAudio = () => {
     console.log('🎵 Playing audio for:', { player, prize, mode });
     if (window.AudioManager) {

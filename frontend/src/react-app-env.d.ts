@@ -4,15 +4,18 @@
 interface AudioManager {
   initialized: boolean;
   audioEnabled: boolean;
+  userInteracted: boolean;
   init(): void;
   enableAudio(): void;
   disableAudio(): void;
+  ensureUnlocked(): void;
   announce(player: number, prize: string, mode?: number): void;
   speak(text: string): void;
   isEnabled(): boolean;
   getStatus(): {
     initialized: boolean;
     audioEnabled: boolean;
+    userInteracted: boolean;
     voicesAvailable: number;
     speechSynthesisAvailable: boolean;
   };

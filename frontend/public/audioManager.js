@@ -5,6 +5,7 @@
 window.AudioManager = {
   initialized: false,
   audioEnabled: false,
+  userInteracted: false,
   
   /**
    * Initialize audio manager on first user interaction
@@ -23,11 +24,13 @@ window.AudioManager = {
         speechSynthesis.speak(testUtterance);
         
         this.initialized = true;
+        this.userInteracted = true;
         this.audioEnabled = localStorage.getItem('spinWheel_audioEnabled') === 'true';
         
         console.log('🎵 AudioManager: Initialized successfully', {
           initialized: this.initialized,
           audioEnabled: this.audioEnabled,
+          userInteracted: this.userInteracted,
           voicesAvailable: speechSynthesis.getVoices().length
         });
       }
@@ -36,6 +39,38 @@ window.AudioManager = {
     // Listen for first user interaction
     document.addEventListener('click', initOnFirstClick, { once: true });
     document.addEventListener('keydown', initOnFirstClick, { once: true });
+  },
+
+  /**
+   * Ensure audio context is unlocked (called during spin)
+   */
+  ensureUnlocked() {
+    if (!this.userInteracted) {
+      console.log('🎵 AudioManager: Unlocking audio context via user action');
+      
+      // Unlock audio context with silent test
+      const testUtterance = new SpeechSynthesisUtterance('');
+      testUtterance.volume = 0;
+      speechSynthesis.speak(testUtterance);
+      
+      this.userInteracted = true;
+      this.initialized = true;
+      
+      // Load audio preference
+      if (localStorage.getItem('spinWheel_audioEnabled') === null) {
+        // Default to enabled for better UX
+        this.audioEnabled = true;
+        localStorage.setItem('spinWheel_audioEnabled', 'true');
+      } else {
+        this.audioEnabled = localStorage.getItem('spinWheel_audioEnabled') === 'true';
+      }
+      
+      console.log('🎵 AudioManager: Audio context unlocked', {
+        initialized: this.initialized,
+        audioEnabled: this.audioEnabled,
+        userInteracted: this.userInteracted
+      });
+    }
   },
   
   /**
@@ -69,13 +104,20 @@ window.AudioManager = {
    * @param {number} mode - Game mode (1 or 2)
    */
   announce(player, prize, mode = 1) {
+    // If not enabled, skip
     if (!this.audioEnabled) {
       console.log('🎵 AudioManager: Audio disabled, skipping announcement');
       return;
     }
     
-    if (!this.initialized) {
-      console.log('🎵 AudioManager: Not initialized yet, skipping announcement');
+    // Try to unlock if not initialized but user interacted
+    if (!this.initialized && this.userInteracted) {
+      this.ensureUnlocked();
+    }
+    
+    // Still not ready? Skip silently
+    if (!this.initialized || !this.userInteracted) {
+      console.log('🎵 AudioManager: Not ready for auto-play, user must enable manually');
       return;
     }
     
@@ -178,6 +220,7 @@ window.AudioManager = {
     return {
       initialized: this.initialized,
       audioEnabled: this.audioEnabled,
+      userInteracted: this.userInteracted,
       voicesAvailable: speechSynthesis ? speechSynthesis.getVoices().length : 0,
       speechSynthesisAvailable: 'speechSynthesis' in window
     };
