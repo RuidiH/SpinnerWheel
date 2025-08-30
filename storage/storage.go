@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 	"time"
 
@@ -109,7 +110,7 @@ func (s *Storage) GetHistory() (*models.SpinHistory, error) {
 		return nil, fmt.Errorf("failed to parse history: %w", err)
 	}
 
-	// Clean up old entries (older than 2 days)
+	// Clean up old entries (older than 2 days) and sort by timestamp
 	cutoff := time.Now().Add(-48 * time.Hour)
 	filteredResults := make([]models.SpinResult, 0)
 	for _, result := range history.Results {
@@ -117,6 +118,12 @@ func (s *Storage) GetHistory() (*models.SpinHistory, error) {
 			filteredResults = append(filteredResults, result)
 		}
 	}
+	
+	// Sort results by timestamp (newest first)
+	sort.Slice(filteredResults, func(i, j int) bool {
+		return filteredResults[i].Timestamp.After(filteredResults[j].Timestamp)
+	})
+	
 	history.Results = filteredResults
 
 	return &history, nil
@@ -162,7 +169,6 @@ func (s *Storage) ResetGame() error {
 	// Reset relevant fields
 	config.CurrentPlayer = 1
 	config.RemainingSpins = 100
-	config.TotalSpins = 0
 
 	// Save updated config
 	if err := s.saveConfigUnsafe(config); err != nil {

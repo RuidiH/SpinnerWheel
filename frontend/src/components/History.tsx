@@ -116,7 +116,7 @@ const History: React.FC<HistoryProps> = ({ results }) => {
   };
 
   const isWinningPrize = (prize: string) => {
-    return prize !== '没中奖' && prize !== '谢谢参与' && prize !== '再来一次';
+    return prize !== '没中奖' && prize !== '再接再厉' && prize !== '谢谢参与' && prize !== '再来一次';
   };
 
   return (

@@ -10,9 +10,10 @@ type GameConfig struct {
 	Mode           int              `json:"mode"`                     // 1 or 2
 	Mode1Options   []PrizeOption    `json:"mode1_options"`           // Options for mode 1
 	Mode2WinText   string           `json:"mode2_win_text"`          // Custom winning text for mode 2
+	Mode2LoseText  string           `json:"mode2_lose_text"`         // Custom losing text for mode 2
+	Mode2WinRate   float64          `json:"mode2_win_rate"`          // Win probability for mode 2 (0-100)
 	CurrentPlayer  int              `json:"current_player"`          // Current player number
 	RemainingSpins int              `json:"remaining_spins"`         // Remaining spins
-	TotalSpins     int              `json:"total_spins"`             // Total spins counter
 	CurrentPage    string           `json:"current_page"`            // Current display page: "lottery1", "lottery2", "advertisement"
 }
 
@@ -52,6 +53,8 @@ type ConfigUpdateRequest struct {
 	Mode           *int             `json:"mode,omitempty"`
 	Mode1Options   []PrizeOption    `json:"mode1_options,omitempty"`
 	Mode2WinText   *string          `json:"mode2_win_text,omitempty"`
+	Mode2LoseText  *string          `json:"mode2_lose_text,omitempty"`
+	Mode2WinRate   *float64         `json:"mode2_win_rate,omitempty"`
 	CurrentPlayer  *int             `json:"current_player,omitempty"`
 	RemainingSpins *int             `json:"remaining_spins,omitempty"`
 	CurrentPage    *string          `json:"current_page,omitempty"`
@@ -119,9 +122,10 @@ func GetDefaultConfig() *GameConfig {
 	return &GameConfig{
 		Mode:           1,
 		Mode2WinText:   "中奖了!", // Default winning text for mode 2
+		Mode2LoseText:  "再接再厉", // Default losing text for mode 2
+		Mode2WinRate:   8.33,     // Default 8.33% win rate (1/12 chance)
 		CurrentPlayer:  1,
 		RemainingSpins: 100,
-		TotalSpins:     0,
 		CurrentPage:    "lottery1", // Default to lottery mode 1
 		Mode1Options: []PrizeOption{
 			{"奖品1", 8.33},

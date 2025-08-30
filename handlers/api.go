@@ -21,9 +21,11 @@ import (
 
 // APIHandler handles all API requests
 type APIHandler struct {
-	storage    *storage.Storage
-	spinMutex  sync.Mutex
-	wsHandler  *WebSocketHandler
+	storage     *storage.Storage
+	spinMutex   sync.Mutex
+	wsHandler   *WebSocketHandler
+	isSpinning  bool
+	spinStarted time.Time
 }
 
 // NewAPIHandler creates a new API handler
@@ -52,6 +54,16 @@ func (h *APIHandler) GetConfig(c *gin.Context) {
 
 // UpdateConfig updates the game configuration
 func (h *APIHandler) UpdateConfig(c *gin.Context) {
+	// Block config updates during active spins
+	if h.isSpinning {
+		c.JSON(http.StatusLocked, gin.H{
+			"error":     "Cannot update configuration while spin is in progress",
+			"spinning":  true,
+			"spin_time": time.Since(h.spinStarted).Seconds(),
+		})
+		return
+	}
+
 	var updateReq models.ConfigUpdateRequest
 	if err := c.ShouldBindJSON(&updateReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request: " + err.Error()})
@@ -74,6 +86,12 @@ func (h *APIHandler) UpdateConfig(c *gin.Context) {
 	}
 	if updateReq.Mode2WinText != nil {
 		config.Mode2WinText = *updateReq.Mode2WinText
+	}
+	if updateReq.Mode2LoseText != nil {
+		config.Mode2LoseText = *updateReq.Mode2LoseText
+	}
+	if updateReq.Mode2WinRate != nil {
+		config.Mode2WinRate = *updateReq.Mode2WinRate
 	}
 	if updateReq.CurrentPlayer != nil {
 		config.CurrentPlayer = *updateReq.CurrentPlayer
@@ -106,6 +124,12 @@ func (h *APIHandler) Spin(c *gin.Context) {
 	h.spinMutex.Lock()
 	defer h.spinMutex.Unlock()
 
+	// Check if already spinning
+	if h.isSpinning {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Spin already in progress"})
+		return
+	}
+
 	// Get current config
 	config, err := h.storage.GetConfig()
 	if err != nil {
@@ -119,11 +143,18 @@ func (h *APIHandler) Spin(c *gin.Context) {
 		return
 	}
 
-	// Broadcast spin started
+	// Set spinning state
+	h.isSpinning = true
+	h.spinStarted = time.Now()
+
+	// Broadcast spin started with lock state
 	if h.wsHandler != nil {
 		h.wsHandler.Broadcast(models.WebSocketMessage{
 			Type: "spin_started",
-			Data: gin.H{"player": config.CurrentPlayer},
+			Data: gin.H{
+				"player":      config.CurrentPlayer,
+				"is_spinning": true,
+			},
 		})
 	}
 
@@ -154,24 +185,43 @@ func (h *APIHandler) Spin(c *gin.Context) {
 		return
 	}
 
-	// Update config (decrement spins, increment total)
+	// Update config (decrement spins)
 	config.RemainingSpins--
-	config.TotalSpins++
 	if err := h.storage.SaveConfig(config); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update config: " + err.Error()})
 		return
 	}
 
-	// Broadcast spin completed
+	// Broadcast spin completed but keep lock active during animation
 	if h.wsHandler != nil {
 		h.wsHandler.Broadcast(models.WebSocketMessage{
 			Type: "spin_completed",
 			Data: gin.H{
-				"result": result,
-				"config": config,
+				"result":      result,
+				"config":      config,
+				"is_spinning": true, // Keep spinning state active
 			},
 		})
 	}
+
+	// Clear spinning state after animation completes (8 seconds)
+	go func() {
+		time.Sleep(8 * time.Second)
+		h.spinMutex.Lock()
+		h.isSpinning = false
+		h.spinStarted = time.Time{}
+		h.spinMutex.Unlock()
+		
+		// Broadcast lock cleared
+		if h.wsHandler != nil {
+			h.wsHandler.Broadcast(models.WebSocketMessage{
+				Type: "spin_lock_cleared",
+				Data: gin.H{
+					"is_spinning": false,
+				},
+			})
+		}
+	}()
 
 	// Check if auto-switch to advertisement page is enabled
 	go h.handleAutoSwitchAfterSpin(config)
@@ -197,6 +247,16 @@ func (h *APIHandler) GetHistory(c *gin.Context) {
 
 // Reset resets the game state
 func (h *APIHandler) Reset(c *gin.Context) {
+	// Block reset during active spins
+	if h.isSpinning {
+		c.JSON(http.StatusLocked, gin.H{
+			"error":     "Cannot reset game while spin is in progress",
+			"spinning":  true,
+			"spin_time": time.Since(h.spinStarted).Seconds(),
+		})
+		return
+	}
+
 	if err := h.storage.ResetGame(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset game: " + err.Error()})
 		return
@@ -246,18 +306,18 @@ func (h *APIHandler) spinMode1(options []models.PrizeOption) (int, string) {
 	return 0, options[0].Text
 }
 
-// spinMode2 handles mode 2 spinning logic (fixed 5% win rate)
+// spinMode2 handles mode 2 spinning logic (configurable win rate)
 func (h *APIHandler) spinMode2(config *models.GameConfig) (int, string) {
-	// 5% chance to win
-	if rand.Float64() < 0.05 {
-		// Winner! Place at random winning position
-		winIndex := rand.Intn(12) // Any of the 12 segments can be winner
-		return winIndex, config.Mode2WinText
+	// Use configured win rate (convert percentage to decimal)
+	winRate := config.Mode2WinRate / 100.0
+	if rand.Float64() < winRate {
+		// Winner! Always place at index 11 to match frontend layout
+		return 11, config.Mode2WinText
 	}
 
-	// No win - place at random non-winning position
-	loseIndex := rand.Intn(12)
-	return loseIndex, "再接再厉"
+	// No win - place at random losing position (indices 0-10)
+	loseIndex := rand.Intn(11) // Pick from 0-10 for losers
+	return loseIndex, config.Mode2LoseText
 }
 
 // handleAutoSwitchAfterSpin handles automatic page switching after spin completion
@@ -340,6 +400,16 @@ func (h *APIHandler) handleAutoSwitchAfterSpin(config *models.GameConfig) {
 
 // SwitchPage switches the current display page
 func (h *APIHandler) SwitchPage(c *gin.Context) {
+	// Block page switching during active spins
+	if h.isSpinning {
+		c.JSON(http.StatusLocked, gin.H{
+			"error":     "Cannot switch pages while spin is in progress",
+			"spinning":  true,
+			"spin_time": time.Since(h.spinStarted).Seconds(),
+		})
+		return
+	}
+
 	var request models.PageSwitchRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request: " + err.Error()})
@@ -696,6 +766,30 @@ func generateUniqueFilename(originalFilename string) string {
 // generateID generates a unique ID using timestamp
 func generateID() string {
 	return strconv.FormatInt(time.Now().UnixNano(), 36)
+}
+
+// CheckAndRecoverSpinLock checks for stale spin locks and recovers them
+func (h *APIHandler) CheckAndRecoverSpinLock() {
+	h.spinMutex.Lock()
+	defer h.spinMutex.Unlock()
+	
+	// If spinning for more than 12 seconds, assume something went wrong (8s animation + 4s buffer)
+	if h.isSpinning && time.Since(h.spinStarted) > 12*time.Second {
+		fmt.Printf("Recovering stale spin lock (duration: %v)\n", time.Since(h.spinStarted))
+		h.isSpinning = false
+		h.spinStarted = time.Time{}
+		
+		// Broadcast unlock to all clients
+		if h.wsHandler != nil {
+			h.wsHandler.Broadcast(models.WebSocketMessage{
+				Type: "spin_lock_recovered",
+				Data: gin.H{
+					"is_spinning": false,
+					"recovered":   true,
+				},
+			})
+		}
+	}
 }
 
 // init initializes random seed

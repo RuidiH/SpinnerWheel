@@ -18,6 +18,15 @@ const WheelContainer = styled.div`
   user-select: none;
 `;
 
+const ArrowOverlay = styled.svg`
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 10;
+`;
+
 const WheelSvg = styled.svg<{ $isSpinning: boolean; $rotation: number }>`
   cursor: ${props => props.$isSpinning ? 'wait' : 'default'};
   transform: rotate(${props => props.$rotation}deg);
@@ -25,19 +34,7 @@ const WheelSvg = styled.svg<{ $isSpinning: boolean; $rotation: number }>`
   transition: ${props => props.$isSpinning ? 'transform 6s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none'};
 `;
 
-const Arrow = styled.div`
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 15px solid transparent;
-  border-right: 15px solid transparent;
-  border-top: 30px solid #ff4444;
-  z-index: 10;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-`;
+// Arrow now moved inside SVG to prevent z-index conflicts
 
 const CenterCircle = styled.circle`
   fill: #333;
@@ -63,15 +60,15 @@ const SegmentText = styled.text`
   text-anchor: middle;
   dominant-baseline: middle;
   pointer-events: none;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
   font-family: 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
+  filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.7));
 `;
 
-// Color palette for segments
+// Improved color palette for segments - more harmonious
 const SEGMENT_COLORS = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
-  '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
-  '#BB8FCE', '#85C1E9', '#F8C471', '#82E0AA'
+  '#FF6B7A', '#4FD1C7', '#4A90E2', '#7ED321',
+  '#F8C471', '#E17B93', '#50C8C8', '#F5A623',
+  '#BD7EDD', '#5AC8FA', '#FFD93D', '#6CC04A'
 ];
 
 const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
@@ -83,9 +80,9 @@ const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
 }) => {
   const [rotation, setRotation] = useState(0);
   const rotationRef = useRef(0);
-  const size = 400;
-  const center = size / 2;
-  const radius = 180;
+  const size = 480; // Increased to accommodate golden rings
+  const center = size / 2; // Now 240
+  const radius = 180; // Keep wheel radius same
   const segmentAngle = 360 / 12; // Always 12 segments
   
   // Update ref when rotation changes
@@ -107,7 +104,7 @@ const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
       option,
       color,
       path: createSegmentPath(center, center, radius, startAngle, endAngle),
-      textPosition: getTextPosition(center, center, radius * 0.7, startAngle + segmentAngle / 2)
+      textPosition: getTextPosition(center, center, radius, startAngle + segmentAngle / 2)
     };
   });
 
@@ -131,23 +128,28 @@ const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
     ].join(' ');
   }
 
-  // Get text position for a segment
+  // Get text position for a segment (closer to center for better visibility)
   function getTextPosition(cx: number, cy: number, r: number, angle: number) {
     const angleRad = (angle * Math.PI) / 180;
+    // Use shorter radius for better text visibility
+    const textRadius = r * 0.65; // Moved closer to center
     return {
-      x: cx + r * Math.cos(angleRad),
-      y: cy + r * Math.sin(angleRad)
+      x: cx + textRadius * Math.cos(angleRad),
+      y: cy + textRadius * Math.sin(angleRad)
     };
   }
+
+  // Note: Text rotation now handled per-character to maintain readability
 
   // Handle spin animation
   useEffect(() => {
     if (isSpinning && winningIndex !== undefined) {
       // Calculate target rotation to align winning segment CENTER with arrow
-      // Segment i center is at (i * 30 - 75)°, arrow is at -90°
-      // To align center with arrow: -90 - (i * 30 - 75) = -15 - i * 30
-      const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.15);
-      let targetAngle = -winningIndex * segmentAngle - 15 + randomOffset;
+      // Arrow points to TOP (-90°), each segment center at -75° + i * 30°
+      // To bring segment i center to -90°: rotation = -90° - (-75° + i * 30°) = -15° - i * 30°
+      const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.05);
+      // Correct formula: -15 - winningIndex * segmentAngle + randomOffset
+      let targetAngle = -15 - winningIndex * segmentAngle + randomOffset;
       
       // Normalize target angle to 0-360 range
       targetAngle = ((targetAngle % 360) + 360) % 360;
@@ -175,14 +177,10 @@ const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
 
   // Click handling disabled - spins are triggered by admin only
 
-  // Truncate long text
-  const truncateText = (text: string, maxLength: number = 6) => {
-    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-  };
+  // Note: Removed truncateText function as we now display full text vertically
 
   return (
     <WheelContainer>
-      <Arrow />
       <WheelSvg
         width={size}
         height={size}
@@ -190,18 +188,77 @@ const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
         $isSpinning={isSpinning}
         $rotation={rotation}
       >
+        {/* Decorative golden rings - adjusted to fit in viewBox */}
+        <circle 
+          cx={center} 
+          cy={center} 
+          r={195} 
+          fill="none" 
+          stroke="url(#goldGradient)" 
+          strokeWidth="8" 
+          opacity="0.8"
+        />
+        <circle 
+          cx={center} 
+          cy={center} 
+          r={205} 
+          fill="none" 
+          stroke="rgba(255, 255, 255, 0.9)" 
+          strokeWidth="3"
+        />
+        
+        {/* Gradient definition for golden ring */}
+        <defs>
+          <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ffd700" />
+            <stop offset="25%" stopColor="#ffed4e" />
+            <stop offset="50%" stopColor="#ffd700" />
+            <stop offset="75%" stopColor="#ffed4e" />
+            <stop offset="100%" stopColor="#ffd700" />
+          </linearGradient>
+          <filter id="arrowShadow">
+            <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="rgba(0,0,0,0.4)"/>
+          </filter>
+        </defs>
+        
         {segments.map((segment) => (
           <g key={segment.index}>
             <SegmentPath
               d={segment.path}
               $color={segment.color}
             />
-            <SegmentText
-              x={segment.textPosition.x}
-              y={segment.textPosition.y}
-            >
-              {truncateText(segment.option.text)}
-            </SegmentText>
+            {/* Radial text - pointing outward from center */}
+            {segment.option && segment.option.text && typeof segment.option.text === 'string' && (
+              <g>
+                {segment.option.text.trim().split('').reverse().map((char, i) => {
+                  const text = segment.option.text.trim();
+                  const textLength = text.length;
+                  const segmentCenterAngle = (segment.startAngle + segment.endAngle) / 2;
+                  const textRadius = radius * 0.65; // Distance from center
+                  
+                  // Characters positioned individually along the radius (reversed array for correct reading)
+                  const characterOffset = (i - (textLength - 1) / 2) * 16;
+                  const charAngle = segmentCenterAngle;
+                  const charAngleRad = (charAngle * Math.PI) / 180;
+                  
+                  // Calculate position for this character
+                  const charX = center + (textRadius + characterOffset) * Math.cos(charAngleRad);
+                  const charY = center + (textRadius + characterOffset) * Math.sin(charAngleRad);
+                  
+                  return (
+                    <SegmentText
+                      key={`${segment.index}-${i}`}
+                      x={charX}
+                      y={charY}
+                      textAnchor="middle"
+                      transform={`rotate(${charAngle + 90} ${charX} ${charY})`}
+                    >
+                      {char}
+                    </SegmentText>
+                  );
+                })}
+              </g>
+            )}
           </g>
         ))}
         <CenterCircle
@@ -209,7 +266,29 @@ const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
           cy={center}
           r={30}
         />
+        
       </WheelSvg>
+      
+      {/* Fixed Arrow Overlay - stays at top */}
+      <ArrowOverlay
+        width={size}
+        height={80}
+        viewBox={`0 0 ${size} 80`}
+      >
+        <defs>
+          <filter id="arrowShadowFixed">
+            <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="rgba(0,0,0,0.4)"/>
+          </filter>
+        </defs>
+        <g filter="url(#arrowShadowFixed)">
+          <polygon 
+            points={`${center},65 ${center-15},35 ${center+15},35`}
+            fill="#ff3333"
+            stroke="#fff"
+            strokeWidth="2"
+          />
+        </g>
+      </ArrowOverlay>
     </WheelContainer>
   );
 };

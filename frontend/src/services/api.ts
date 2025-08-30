@@ -4,9 +4,10 @@ export interface GameConfig {
   mode: number;
   mode1_options: PrizeOption[];
   mode2_win_text: string;
+  mode2_lose_text: string;
+  mode2_win_rate: number;
   current_player: number;
   remaining_spins: number;
-  total_spins: number;
   current_page: string;
 }
 
@@ -31,6 +32,8 @@ export interface ConfigUpdateRequest {
   mode?: number;
   mode1_options?: PrizeOption[];
   mode2_win_text?: string;
+  mode2_lose_text?: string;
+  mode2_win_rate?: number;
   current_player?: number;
   remaining_spins?: number;
 }

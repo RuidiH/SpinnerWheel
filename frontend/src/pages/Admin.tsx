@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Fragment } from 'react';
 import styled from 'styled-components';
 import { 
   apiService, 
@@ -240,12 +240,52 @@ const Mode2Item = styled.div`
   }
 `;
 
+const SpinningOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  color: white;
+  font-size: 24px;
+  font-weight: 600;
+`;
+
+const SpinningWheel = styled.div`
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+const SpinMessage = styled.div`
+  text-align: center;
+  margin-top: 10px;
+  font-size: 18px;
+  opacity: 0.9;
+`;
+
 const Admin: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [currentPage, setCurrentPage] = useState('lottery1');
+  const [isSpinning, setIsSpinning] = useState(false);
 
   // Default placeholder dishes - same as used in Restaurant display
   const defaultDishes = [
@@ -287,6 +327,8 @@ const Admin: React.FC = () => {
   const [selectedMode, setSelectedMode] = useState(1);
   const [mode1Options, setMode1Options] = useState<PrizeOption[]>([]);
   const [mode2WinText, setMode2WinText] = useState('中奖了!');
+  const [mode2LoseText, setMode2LoseText] = useState('再接再厉');
+  const [mode2WinRate, setMode2WinRate] = useState(8.33);
 
   // Restaurant management state
   const [restaurantData, setRestaurantData] = useState<RestaurantData | null>(null);
@@ -316,6 +358,8 @@ const Admin: React.FC = () => {
       setSelectedMode(configData.mode);
       setMode1Options(configData.mode1_options || []);
       setMode2WinText(configData.mode2_win_text || '中奖了!');
+      setMode2LoseText(configData.mode2_lose_text || '再接再厉');
+      setMode2WinRate(configData.mode2_win_rate || 8.33);
       setCurrentPage(configData.current_page || 'lottery1');
       
       // Update restaurant data state
@@ -371,12 +415,46 @@ const Admin: React.FC = () => {
 
     // Listen for config updates from other sources
     const unsubscribe = wsService.onConfigUpdated((data: GameConfig) => {
-      setCurrentPlayer(data.current_player);
-      setRemainingSpins(data.remaining_spins);
-      setSelectedMode(data.mode);
-      setMode1Options(data.mode1_options || []);
-      setMode2WinText(data.mode2_win_text || '中奖了!');
-      setCurrentPage(data.current_page || 'lottery1');
+      // Only update config if not spinning (to avoid conflicts)
+      if (!isSpinning) {
+        setCurrentPlayer(data.current_player);
+        setRemainingSpins(data.remaining_spins);
+        setSelectedMode(data.mode);
+        setMode1Options(data.mode1_options || []);
+        setMode2WinText(data.mode2_win_text || '中奖了!');
+        setMode2LoseText(data.mode2_lose_text || '再接再厉');
+        setMode2WinRate(data.mode2_win_rate || 8.33);
+        setCurrentPage(data.current_page || 'lottery1');
+      }
+    });
+
+    // Listen for spin events to manage UI locking
+    const unsubscribeSpinStarted = wsService.onSpinStarted((data: any) => {
+      setIsSpinning(true);
+      setError(''); // Clear any errors
+      console.log('Admin: Spin started, locking UI');
+    });
+
+    const unsubscribeSpinCompleted = wsService.onSpinCompleted((data: any) => {
+      // Don't unlock UI yet - wait for spin_lock_cleared
+      console.log('Admin: Spin completed, but keeping UI locked during animation');
+      // Refresh config after spin to get updated remaining spins
+      if (data.config) {
+        setCurrentPlayer(data.config.current_player);
+        setRemainingSpins(data.config.remaining_spins);
+      }
+    });
+
+    // Listen for lock cleared event
+    const unsubscribeSpinLockCleared = wsService.on('spin_lock_cleared', () => {
+      setIsSpinning(false);
+      console.log('Admin: Spin lock cleared, unlocking UI');
+    });
+
+    // Listen for spin lock recovery
+    const unsubscribeSpinRecovered = wsService.on('spin_lock_recovered', (data: any) => {
+      setIsSpinning(false);
+      console.log('Admin: Spin lock recovered, unlocking UI');
     });
 
     // Listen for page switching events
@@ -388,6 +466,8 @@ const Admin: React.FC = () => {
         setSelectedMode(data.config.mode);
         setMode1Options(data.config.mode1_options || []);
         setMode2WinText(data.config.mode2_win_text || '中奖了!');
+        setMode2LoseText(data.config.mode2_lose_text || '再接再厉');
+        setMode2WinRate(data.config.mode2_win_rate || 8.33);
       }
     });
 
@@ -402,6 +482,10 @@ const Admin: React.FC = () => {
 
     return () => {
       unsubscribe();
+      unsubscribeSpinStarted();
+      unsubscribeSpinCompleted();
+      unsubscribeSpinLockCleared();
+      unsubscribeSpinRecovered();
       unsubscribePageSwitch();
       unsubscribeAdAdded();
       unsubscribeAdDeleted();
@@ -565,11 +649,19 @@ const Admin: React.FC = () => {
       }
       
       if (selectedMode === 2) {
-        // Validate mode2 win text
+        // Validate mode2 settings
         if (!mode2WinText.trim()) {
           throw new Error('中奖文本不能为空');
         }
+        if (!mode2LoseText.trim()) {
+          throw new Error('失败文本不能为空');
+        }
+        if (mode2WinRate <= 0 || mode2WinRate >= 100) {
+          throw new Error('中奖概率必须在0-100之间');
+        }
         updateRequest.mode2_win_text = mode2WinText;
+        updateRequest.mode2_lose_text = mode2LoseText;
+        updateRequest.mode2_win_rate = mode2WinRate;
       }
 
       // Save configuration
@@ -885,6 +977,7 @@ const Admin: React.FC = () => {
   }
 
   return (
+    <Fragment>
     <AdminContainer>
       <Header>
         <Title>管理界面</Title>
@@ -953,13 +1046,15 @@ const Admin: React.FC = () => {
           <ModeSelector>
             <ModeButton
               $active={selectedMode === 1}
-              onClick={() => setSelectedMode(1)}
+              onClick={() => !isSpinning && setSelectedMode(1)}
+              disabled={isSpinning}
             >
               模式1 - 经典模式
             </ModeButton>
             <ModeButton
               $active={selectedMode === 2}
-              onClick={() => setSelectedMode(2)}
+              onClick={() => !isSpinning && setSelectedMode(2)}
+              disabled={isSpinning}
             >
               模式2 - 固定概率
             </ModeButton>
@@ -980,7 +1075,7 @@ const Admin: React.FC = () => {
               </div>
               <PrizeGrid>
                 {mode1Options.map((option, index) => (
-                  <PrizeItem key={index}>
+                  <PrizeItem key={index} style={{ opacity: isSpinning ? 0.6 : 1 }}>
                     <PrizeLabel>奖品 {index + 1}</PrizeLabel>
                     <FormGroup>
                       <Input
@@ -988,6 +1083,7 @@ const Admin: React.FC = () => {
                         placeholder="奖品名称"
                         value={option.text}
                         onChange={(e) => handleMode1OptionChange(index, 'text', e.target.value)}
+                        disabled={isSpinning}
                       />
                     </FormGroup>
                     <PrizeInputGroup>
@@ -998,6 +1094,7 @@ const Admin: React.FC = () => {
                         step="0.01"
                         value={option.probability}
                         onChange={(e) => handleMode1OptionChange(index, 'probability', e.target.value)}
+                        disabled={isSpinning}
                       />
                       <span style={{ color: '#666' }}>%</span>
                     </PrizeInputGroup>
@@ -1009,38 +1106,81 @@ const Admin: React.FC = () => {
 
           {selectedMode === 2 && (
             <div>
-              <p style={{ color: '#666', marginBottom: '16px' }}>
-                固定模式：11个"再接再厉"，自定义中奖奖品，总中奖率5%
+              <p style={{ color: '#666', marginBottom: '20px' }}>
+                简化模式：配置中奖概率和文案，系统自动分配到12个扇形区域
               </p>
               
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                <FormGroup>
+                  <Label htmlFor="mode2WinRate">中奖概率 (%)</Label>
+                  <Input
+                    id="mode2WinRate"
+                    type="number"
+                    min="0.1"
+                    max="99.9"
+                    step="0.1"
+                    placeholder="输入中奖概率"
+                    value={mode2WinRate}
+                    onChange={(e) => setMode2WinRate(parseFloat(e.target.value) || 0)}
+                    disabled={isSpinning}
+                  />
+                  <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                    建议设置8.33%（1/12概率）
+                  </small>
+                </FormGroup>
+                
+                <FormGroup>
+                  <Label htmlFor="mode2WinText">中奖文案</Label>
+                  <Input
+                    id="mode2WinText"
+                    type="text"
+                    placeholder="输入中奖时显示的文案"
+                    value={mode2WinText}
+                    onChange={(e) => setMode2WinText(e.target.value)}
+                    disabled={isSpinning}
+                  />
+                  <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                    用户中奖时显示的内容
+                  </small>
+                </FormGroup>
+              </div>
+              
               <FormGroup style={{ marginBottom: '20px' }}>
-                <Label htmlFor="mode2WinText">中奖奖品内容</Label>
+                <Label htmlFor="mode2LoseText">未中奖文案</Label>
                 <Input
-                  id="mode2WinText"
+                  id="mode2LoseText"
                   type="text"
-                  placeholder="输入中奖时显示的奖品内容"
-                  value={mode2WinText}
-                  onChange={(e) => setMode2WinText(e.target.value)}
+                  placeholder="输入未中奖时显示的文案"
+                  value={mode2LoseText}
+                  onChange={(e) => setMode2LoseText(e.target.value)}
+                  disabled={isSpinning}
                 />
                 <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                  当用户中奖时，将显示此奖品内容
+                  用户未中奖时显示的内容
                 </small>
               </FormGroup>
 
-              <Mode2Display>
-                {Array.from({ length: 11 }, (_, i) => (
-                  <Mode2Item key={i}>
-                    <span>再接再厉</span>
-                    <span style={{ color: '#666' }}>~8.64%</span>
-                  </Mode2Item>
-                ))}
-                <Mode2Item>
-                  <span style={{ color: '#00b894', fontWeight: '600' }}>
-                    {mode2WinText || '中奖了!'}
-                  </span>
-                  <span style={{ color: '#00b894', fontWeight: '600' }}>5%</span>
-                </Mode2Item>
-              </Mode2Display>
+              <div style={{ 
+                background: '#f8f9fa', 
+                padding: '16px', 
+                borderRadius: '8px',
+                border: '1px solid #e9ecef'
+              }}>
+                <h4 style={{ margin: '0 0 12px 0', color: '#495057', fontSize: '14px' }}>配置预览</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', fontSize: '13px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 8px', background: '#fff', borderRadius: '4px' }}>
+                    <span style={{ color: '#d63031', fontWeight: '500' }}>{mode2WinText || '中奖了!'}</span>
+                    <span style={{ color: '#d63031', fontWeight: '500' }}>{mode2WinRate.toFixed(1)}%</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 8px', background: '#fff', borderRadius: '4px' }}>
+                    <span style={{ color: '#636e72' }}>{mode2LoseText || '再接再厉'}</span>
+                    <span style={{ color: '#636e72' }}>每段 {((100 - mode2WinRate) / 11).toFixed(1)}%</span>
+                  </div>
+                </div>
+                <div style={{ fontSize: '12px', color: '#74b9ff', marginTop: '8px' }}>
+                  💡 共12个扇形：1个中奖区域，11个未中奖区域
+                </div>
+              </div>
             </div>
           )}
         </Section>
@@ -1374,10 +1514,10 @@ const Admin: React.FC = () => {
         <Section>
           <SectionTitle>操作</SectionTitle>
           <ButtonGroup>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving || isSpinning}>
               {saving ? '保存中...' : '保存配置'}
             </Button>
-            <Button $variant="danger" onClick={handleReset} disabled={saving}>
+            <Button $variant="danger" onClick={handleReset} disabled={saving || isSpinning}>
               重置游戏
             </Button>
             <Button
@@ -1405,6 +1545,16 @@ const Admin: React.FC = () => {
         )}
       </ConfigForm>
     </AdminContainer>
+    
+    {/* Spinning overlay - shown when spin is in progress */}
+    {isSpinning && (
+      <SpinningOverlay>
+        <SpinningWheel />
+        <div>抽奖进行中</div>
+        <SpinMessage>请稍候，配置已锁定...</SpinMessage>
+      </SpinningOverlay>
+    )}
+  </Fragment>
   );
 };
 

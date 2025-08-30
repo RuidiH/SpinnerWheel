@@ -12,9 +12,13 @@ class WebSocketService {
   private reconnectInterval: number = 1000;
   private maxReconnectInterval: number = 30000;
   private reconnectAttempts: number = 0;
-  private maxReconnectAttempts: number = 5;
+  private maxReconnectAttempts: number = 10; // Increased from 5
   private eventHandlers: Map<string, WebSocketEventHandler[]> = new Map();
   private url: string;
+  private connectionHealthTimer: NodeJS.Timeout | null = null;
+  private lastPongReceived: number = 0;
+  private connectionValidated: boolean = false;
+  private permanentFailureCallback: (() => void) | null = null;
 
   constructor() {
     // Use current origin with ws protocol in production, localhost:8080 in development
@@ -38,6 +42,10 @@ class WebSocketService {
         console.log('WebSocket connected');
         this.reconnectAttempts = 0;
         this.reconnectInterval = 1000;
+        this.connectionValidated = false;
+        this.startConnectionHealthCheck();
+        // Send initial ping to validate connection
+        setTimeout(() => this.validateConnection(), 500);
       };
 
       this.ws.onmessage = (event) => {
@@ -65,10 +73,12 @@ class WebSocketService {
   }
 
   disconnect(): void {
+    this.stopConnectionHealthCheck();
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
+    this.connectionValidated = false;
   }
 
   send(message: WebSocketMessage): void {
@@ -88,6 +98,16 @@ class WebSocketService {
   }
 
   private handleMessage(message: WebSocketMessage): void {
+    // Handle pong response for connection validation
+    if (message.type === 'pong') {
+      this.lastPongReceived = Date.now();
+      if (!this.connectionValidated) {
+        this.connectionValidated = true;
+        console.log('✅ WebSocket connection validated');
+      }
+      return;
+    }
+    
     const handlers = this.eventHandlers.get(message.type);
     if (handlers) {
       handlers.forEach(handler => {
@@ -101,8 +121,22 @@ class WebSocketService {
   }
 
   private attemptReconnect(): void {
+    this.stopConnectionHealthCheck();
+    this.connectionValidated = false;
+    
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached');
+      console.error('Max reconnection attempts reached. Suggesting page refresh.');
+      if (this.permanentFailureCallback) {
+        this.permanentFailureCallback();
+      } else {
+        // Fallback: auto-refresh after 5 seconds
+        console.warn('WebSocket permanently failed. Auto-refreshing page in 5 seconds...');
+        setTimeout(() => {
+          if (window.confirm('网络连接异常，是否刷新页面？')) {
+            window.location.reload();
+          }
+        }, 5000);
+      }
       return;
     }
 
@@ -169,7 +203,54 @@ class WebSocketService {
   }
 
   isConnected(): boolean {
-    return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
+    return this.ws !== null && this.ws.readyState === WebSocket.OPEN && this.connectionValidated;
+  }
+  
+  private startConnectionHealthCheck(): void {
+    this.stopConnectionHealthCheck();
+    this.connectionHealthTimer = setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        // Send ping and check if pong was received recently
+        const now = Date.now();
+        if (this.lastPongReceived > 0 && now - this.lastPongReceived > 35000) {
+          console.warn('Connection health check failed - no pong received');
+          this.ws.close(); // This will trigger reconnection
+          return;
+        }
+        this.ping();
+      }
+    }, 15000); // Check every 15 seconds
+  }
+  
+  private stopConnectionHealthCheck(): void {
+    if (this.connectionHealthTimer) {
+      clearInterval(this.connectionHealthTimer);
+      this.connectionHealthTimer = null;
+    }
+  }
+  
+  private validateConnection(): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ping();
+      // If no pong received within 10 seconds, consider connection invalid
+      setTimeout(() => {
+        if (!this.connectionValidated) {
+          console.warn('Connection validation failed - no pong response');
+          this.ws?.close(); // This will trigger reconnection
+        }
+      }, 10000);
+    }
+  }
+  
+  onPermanentFailure(callback: () => void): void {
+    this.permanentFailureCallback = callback;
+  }
+  
+  getConnectionStatus(): 'connected' | 'connecting' | 'disconnected' {
+    if (!this.ws) return 'disconnected';
+    if (this.ws.readyState === WebSocket.OPEN && this.connectionValidated) return 'connected';
+    if (this.ws.readyState === WebSocket.CONNECTING || !this.connectionValidated) return 'connecting';
+    return 'disconnected';
   }
 }
 
