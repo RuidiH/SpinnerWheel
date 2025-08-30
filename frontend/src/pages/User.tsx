@@ -237,6 +237,7 @@ const User: React.FC<UserProps> = ({ forcedMode }) => {
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [winnerResult, setWinnerResult] = useState<SpinResult | null>(null);
+  const [spinStartTime, setSpinStartTime] = useState<number | null>(null);
 
   // Load initial data
   const loadData = useCallback(async () => {
@@ -303,6 +304,7 @@ const User: React.FC<UserProps> = ({ forcedMode }) => {
 
     const unsubscribeSpinStarted = wsService.onSpinStarted(() => {
       setIsSpinning(true);
+      setSpinStartTime(Date.now());
       setError('');
     });
 
@@ -345,6 +347,7 @@ const User: React.FC<UserProps> = ({ forcedMode }) => {
       setTimeout(() => {
         setIsSpinning(false);
         setWinningIndex(undefined);
+        setSpinStartTime(null);
       }, 7000);
     });
 
@@ -601,6 +604,7 @@ const User: React.FC<UserProps> = ({ forcedMode }) => {
               onSpin={handleSpin}
               isSpinning={isSpinning}
               winningIndex={winningIndex}
+              spinStartTime={spinStartTime}
               disabled={config.remaining_spins <= 0}
             />
           </WheelWrapper>

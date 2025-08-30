@@ -7,6 +7,7 @@ interface SpinnerWheelProps {
   onSpin: () => void;
   isSpinning: boolean;
   winningIndex?: number;
+  spinStartTime?: number | null;
   disabled?: boolean;
 }
 
@@ -31,7 +32,6 @@ const WheelSvg = styled.svg<{ $isSpinning: boolean; $rotation: number }>`
   cursor: ${props => props.$isSpinning ? 'wait' : 'default'};
   transform: rotate(${props => props.$rotation}deg);
   filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
-  transition: ${props => props.$isSpinning ? 'transform 6s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none'};
 `;
 
 // Arrow now moved inside SVG to prevent z-index conflicts
@@ -76,14 +76,19 @@ const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
   onSpin,
   isSpinning,
   winningIndex,
+  spinStartTime,
   disabled = false
 }) => {
   const [rotation, setRotation] = useState(0);
   const rotationRef = useRef(0);
+  const animationRef = useRef<number | null>(null);
+  const targetRotationRef = useRef(0);
+  const animationStartTimeRef = useRef<number | null>(null);
   const size = 480; // Increased to accommodate golden rings
   const center = size / 2; // Now 240
   const radius = 180; // Keep wheel radius same
   const segmentAngle = 360 / 12; // Always 12 segments
+  const ANIMATION_DURATION = 6000; // 6 seconds
   
   // Update ref when rotation changes
   useEffect(() => {
@@ -141,39 +146,98 @@ const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
 
   // Note: Text rotation now handled per-character to maintain readability
 
-  // Handle spin animation
+  // Easing function for smooth animation
+  const easeInOutCubic = (t: number): number => {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  };
+
+  // Handle timestamp-based spin animation
   useEffect(() => {
-    if (isSpinning && winningIndex !== undefined) {
+    if (isSpinning && winningIndex !== undefined && spinStartTime) {
       // Calculate target rotation to align winning segment CENTER with arrow
-      // Arrow points to TOP (-90°), each segment center at -75° + i * 30°
-      // To bring segment i center to -90°: rotation = -90° - (-75° + i * 30°) = -15° - i * 30°
       const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.05);
-      // Correct formula: -15 - winningIndex * segmentAngle + randomOffset
       let targetAngle = -15 - winningIndex * segmentAngle + randomOffset;
-      
-      // Normalize target angle to 0-360 range
       targetAngle = ((targetAngle % 360) + 360) % 360;
       
-      // Calculate rotation relative to current position using ref
       const currentRotation = rotationRef.current;
       const currentNormalizedRotation = currentRotation % 360;
       let deltaRotation = targetAngle - currentNormalizedRotation;
       
-      // Ensure we rotate forward
       if (deltaRotation < 0) {
         deltaRotation += 360;
       }
       
-      // Add minimum 3 full rotations + extra for excitement (3-8 total)
+      // Add 3-8 full rotations for excitement
       const minSpins = 3;
-      const extraSpins = Math.floor(Math.random() * 6); // 0-5 extra spins
+      const extraSpins = Math.floor(Math.random() * 6);
       const totalRotation = deltaRotation + (minSpins + extraSpins) * 360;
       const finalRotation = currentRotation + totalRotation;
       
-      // Start smooth rotation animation
-      setRotation(finalRotation);
+      // Store target for animation
+      targetRotationRef.current = finalRotation;
+      animationStartTimeRef.current = spinStartTime;
+      
+      // Start JavaScript animation loop
+      const animate = () => {
+        const now = Date.now();
+        const elapsed = now - spinStartTime;
+        const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+        
+        if (progress < 1) {
+          // Calculate current rotation with easing
+          const easedProgress = easeInOutCubic(progress);
+          const currentAnimationRotation = currentRotation + (totalRotation * easedProgress);
+          
+          setRotation(currentAnimationRotation);
+          rotationRef.current = currentAnimationRotation;
+          
+          // Continue animation
+          animationRef.current = requestAnimationFrame(animate);
+        } else {
+          // Animation complete
+          setRotation(finalRotation);
+          rotationRef.current = finalRotation;
+          animationRef.current = null;
+        }
+      };
+      
+      // Handle tab visibility changes - catch up animation when tab becomes visible
+      const handleVisibilityChange = () => {
+        if (!document.hidden && animationRef.current === null && spinStartTime) {
+          const now = Date.now();
+          const elapsed = now - spinStartTime;
+          const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+          
+          if (progress < 1) {
+            // Tab became visible mid-animation - catch up and continue
+            const easedProgress = easeInOutCubic(progress);
+            const catchUpRotation = currentRotation + (totalRotation * easedProgress);
+            
+            setRotation(catchUpRotation);
+            rotationRef.current = catchUpRotation;
+            
+            // Continue animation from current position
+            animationRef.current = requestAnimationFrame(animate);
+          }
+        }
+      };
+      
+      // Listen for visibility changes
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      
+      // Start animation immediately
+      animationRef.current = requestAnimationFrame(animate);
+      
+      // Cleanup function
+      return () => {
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+          animationRef.current = null;
+        }
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     }
-  }, [isSpinning, winningIndex, segmentAngle]);
+  }, [isSpinning, winningIndex, spinStartTime, segmentAngle]);
 
   // Click handling disabled - spins are triggered by admin only
 
