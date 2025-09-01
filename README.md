@@ -68,6 +68,62 @@ SpinnerWheel/
 - 首次构建需要: Go 1.21+ 和 Node.js 18+
 - 生产运行只需要生成的exe文件
 
+## 🌐 离线部署 / Offline Deployment
+
+**适用于网络受限环境 / For Network-Restricted Environments**
+
+此项目包含所有Go依赖的本地副本，支持完全离线构建和部署。
+This project includes local copies of all Go dependencies for complete offline build and deployment.
+
+### 离线构建 / Offline Build
+```bash
+# 使用包含的vendor依赖构建 / Build using included vendor dependencies
+scripts\build.bat        # 自动使用vendor模式 / Auto-uses vendor mode
+# 或 / Or
+npm run build:exe        # 使用vendor模式 / Uses vendor mode
+```
+
+### 网络问题解决方案 / Network Issues Solutions
+
+#### 1. 使用备用Go代理 / Alternative Go Proxies
+```bash
+# 中国用户 / For China users
+set GOPROXY=https://goproxy.cn,direct
+
+# 其他地区 / Other regions  
+set GOPROXY=https://goproxy.io,direct
+set GOPROXY=https://athens.azurefd.net,direct
+
+# 然后重新下载依赖 / Then re-download dependencies
+go mod download
+```
+
+#### 2. 完全离线模式 / Complete Offline Mode
+如果vendor目录存在，构建脚本将自动使用离线模式，无需网络连接。
+If vendor directory exists, build scripts automatically use offline mode with no network required.
+
+```bash
+# 验证离线构建 / Verify offline build
+go build -mod=vendor -o test-offline.exe
+```
+
+#### 3. 手动创建vendor / Manual Vendor Creation
+如果需要重新创建vendor目录：
+If you need to recreate the vendor directory:
+
+```bash
+go mod vendor      # 下载并创建vendor目录 / Download and create vendor directory
+go mod verify      # 验证依赖完整性 / Verify dependencies integrity
+```
+
+### 依赖信息 / Dependencies Info
+- **Vendor目录大小 / Vendor Size**: ~33MB
+- **主要依赖 / Main Dependencies**: 
+  - Gin Web框架 / Gin Web Framework
+  - WebSocket支持 / WebSocket Support  
+  - CORS中间件 / CORS Middleware
+- **离线兼容性 / Offline Compatibility**: ✅ 完全支持 / Fully Supported
+
 ## 📖 常用操作 / Common Operations
 
 ### 开发模式 / Development Mode
@@ -94,9 +150,11 @@ npm run start        # 启动生产服务器
 - 或使用: `spinner-wheel.exe -port 9000`
 
 ### 构建失败 / Build Failed
-- 检查网络连接
-- 删除 `frontend\node_modules` 重新构建
+- **Go依赖问题**: 项目已包含vendor目录，支持离线构建
+- **网络限制**: 使用 `go build -mod=vendor` 进行离线构建
+- **前端构建**: 删除 `frontend\node_modules` 重新构建
 - 确保 Node.js 版本 18+
+- 尝试使用替代Go代理 (见离线部署章节)
 
 ### 数据丢失 / Data Loss
 - 数据自动保存在 `data/` 目录

@@ -109,16 +109,27 @@ echo.
 
 echo [4/4] Building Go application...
 
-:: Install Go dependencies
-go mod tidy
-if %errorlevel% neq 0 (
-    echo ERROR: Failed to install Go dependencies
-    pause
-    exit /b 1
+:: Prepare Go dependencies (use vendor for offline builds)
+if exist "vendor" (
+    echo Using vendored dependencies for offline build...
+    :: No need for go mod tidy - use existing vendor
+) else (
+    echo Downloading Go dependencies...
+    go mod tidy
+    if %errorlevel% neq 0 (
+        echo ERROR: Failed to install Go dependencies
+        echo TIP: For offline builds, run 'go mod vendor' first
+        pause
+        exit /b 1
+    )
 )
 
-:: Build executable
-go build -o spinner-wheel.exe
+:: Build executable (prefer vendor mode if available)
+if exist "vendor" (
+    go build -mod=vendor -o spinner-wheel.exe
+) else (
+    go build -o spinner-wheel.exe
+)
 if %errorlevel% neq 0 (
     echo ERROR: Go build failed
     pause

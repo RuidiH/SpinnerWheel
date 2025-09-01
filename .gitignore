@@ -22,7 +22,7 @@ data/restaurant.json
 data/uploads/
 
 # Go Dependencies
-/vendor/
+# /vendor/ - Vendor directory now included for offline deployment support
 
 # IDE Files
 .idea/
