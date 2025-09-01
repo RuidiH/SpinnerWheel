@@ -83,7 +83,7 @@ This project includes local copies of all Go dependencies for complete offline b
 scripts\build.bat        # 自动检测并使用vendor模式 / Auto-detects and uses vendor mode
 
 # 或仅构建Go应用 / Or build Go application only  
-npm run build:exe        # 直接使用vendor模式 / Uses vendor mode directly
+npm run build:exe        # 自动检测vendor并选择模式 / Auto-detects vendor and chooses mode
 ```
 
 #### Linux/Mac 用户 / Linux/Mac Users  
@@ -92,7 +92,14 @@ npm run build:exe        # 直接使用vendor模式 / Uses vendor mode directly
 scripts/build.bat         # Cross-platform compatible
 
 # 仅构建Go应用 / Go application only
-npm run build:exe
+npm run build:exe         # 自动检测vendor并选择模式 / Auto-detects vendor and chooses mode
+```
+
+**预期输出 / Expected Output:**
+```
+> npm run build:exe
+Using vendor mode...
+✓ Build completed successfully! Created: spinner-wheel.exe
 ```
 
 ### 网络问题解决方案 / Network Issues Solutions
