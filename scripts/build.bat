@@ -112,7 +112,7 @@ echo [4/4] Building Go application...
 :: Prepare Go dependencies (use vendor for offline builds)
 if exist "vendor" (
     echo Using vendored dependencies for offline build...
-    :: No need for go mod tidy - use existing vendor
+    go build -mod=vendor -o spinner-wheel.exe
 ) else (
     echo Downloading Go dependencies...
     go mod tidy
@@ -122,12 +122,6 @@ if exist "vendor" (
         pause
         exit /b 1
     )
-)
-
-:: Build executable (prefer vendor mode if available)
-if exist "vendor" (
-    go build -mod=vendor -o spinner-wheel.exe
-) else (
     go build -o spinner-wheel.exe
 )
 if %errorlevel% neq 0 (

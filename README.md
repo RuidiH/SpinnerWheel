@@ -76,11 +76,23 @@ SpinnerWheel/
 This project includes local copies of all Go dependencies for complete offline build and deployment.
 
 ### 离线构建 / Offline Build
+
+#### Windows 用户 / Windows Users
+```cmd
+# 使用完整构建脚本 (推荐) / Use complete build script (recommended)
+scripts\build.bat        # 自动检测并使用vendor模式 / Auto-detects and uses vendor mode
+
+# 或仅构建Go应用 / Or build Go application only  
+npm run build:exe        # 直接使用vendor模式 / Uses vendor mode directly
+```
+
+#### Linux/Mac 用户 / Linux/Mac Users  
 ```bash
-# 使用包含的vendor依赖构建 / Build using included vendor dependencies
-scripts\build.bat        # 自动使用vendor模式 / Auto-uses vendor mode
-# 或 / Or
-npm run build:exe        # 使用vendor模式 / Uses vendor mode
+# 完整构建 / Complete build
+scripts/build.bat         # Cross-platform compatible
+
+# 仅构建Go应用 / Go application only
+npm run build:exe
 ```
 
 ### 网络问题解决方案 / Network Issues Solutions
@@ -102,9 +114,16 @@ go mod download
 如果vendor目录存在，构建脚本将自动使用离线模式，无需网络连接。
 If vendor directory exists, build scripts automatically use offline mode with no network required.
 
+**验证步骤 / Verification Steps:**
 ```bash
-# 验证离线构建 / Verify offline build
+# 1. 检查vendor目录是否存在 / Check if vendor directory exists
+ls vendor/ | head -5    # 应显示依赖包 / Should show dependency packages
+
+# 2. 验证离线构建 / Verify offline build  
 go build -mod=vendor -o test-offline.exe
+
+# 3. 测试可执行文件 / Test executable
+./test-offline.exe      # 应正常启动服务器 / Should start server normally
 ```
 
 #### 3. 手动创建vendor / Manual Vendor Creation
@@ -123,6 +142,33 @@ go mod verify      # 验证依赖完整性 / Verify dependencies integrity
   - WebSocket支持 / WebSocket Support  
   - CORS中间件 / CORS Middleware
 - **离线兼容性 / Offline Compatibility**: ✅ 完全支持 / Fully Supported
+
+### 离线部署故障排除 / Offline Deployment Troubleshooting
+
+**问题1: 构建脚本出错 / Issue 1: Build script errors**
+```bash
+# 检查vendor目录 / Check vendor directory
+dir vendor      # Windows
+ls vendor/      # Linux/Mac
+
+# 如果vendor不存在，重新创建 / If vendor missing, recreate
+go mod vendor
+```
+
+**问题2: 权限错误 / Issue 2: Permission errors**
+```bash
+# Windows: 以管理员运行 / Run as administrator
+# Linux/Mac: 检查权限 / Check permissions
+chmod +x scripts/build.bat
+```
+
+**问题3: 路径问题 / Issue 3: Path issues**
+```bash
+# 确保从项目根目录运行 / Ensure running from project root
+cd SpinnerWheel
+scripts/build.bat    # Use forward slashes on Linux/Mac
+scripts\build.bat    # Use backslashes on Windows
+```
 
 ## 📖 常用操作 / Common Operations
 
