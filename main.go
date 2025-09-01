@@ -201,6 +201,9 @@ func main() {
 		r.StaticFile("/manifest.json", filepath.Join(staticPath, "manifest.json"))
 		r.StaticFile("/favicon.ico", filepath.Join(staticPath, "favicon.ico"))
 		r.StaticFile("/robots.txt", filepath.Join(staticPath, "robots.txt"))
+		r.StaticFile("/audioManager.js", filepath.Join(staticPath, "audioManager.js"))
+		r.StaticFile("/logo192.png", filepath.Join(staticPath, "logo192.png"))
+		r.StaticFile("/logo512.png", filepath.Join(staticPath, "logo512.png"))
 		// Serve index.html for all routes
 		r.StaticFile("/", filepath.Join(staticPath, "index.html"))
 		r.StaticFile("/user", filepath.Join(staticPath, "index.html"))
