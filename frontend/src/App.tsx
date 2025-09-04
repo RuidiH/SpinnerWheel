@@ -8,10 +8,17 @@ import './App.css';
 
 const AppContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-image: url('/bg.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-attachment: fixed;
   display: flex;
   flex-direction: column;
   font-family: 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
+  
+  /* Fallback for older browsers or if image fails to load */
+  background-color: #DC143C;
 `;
 
 const GlobalStyles = styled.div`

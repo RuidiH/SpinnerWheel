@@ -213,6 +213,77 @@ npm run start        # 启动生产服务器
 - 数据自动保存在 `data/` 目录
 - 建议定期备份此目录
 
+## 🎨 自定义背景 / Customizing Background
+
+### 更换背景图片 / Changing Background Image
+
+应用程序使用 `bg.png` 作为背景图片。要更换背景，请按以下步骤操作：
+The application uses `bg.png` as the background image. To change the background, follow these steps:
+
+#### 开发模式 / Development Mode
+1. **替换图片文件 / Replace Image File**
+   ```bash
+   # 将新背景图片复制到public目录 / Copy new background to public directory
+   cp your-new-background.png frontend/public/bg.png
+   ```
+
+2. **重新构建前端 / Rebuild Frontend**
+   ```bash
+   cd frontend
+   npm run build
+   cp -r build/* ../static/
+   ```
+
+#### 生产环境 / Production Environment
+```bash
+# 1. 替换静态目录中的背景 / Replace background in static directory
+cp your-new-background.png static/bg.png
+
+# 2. 如需修改CSS属性，编辑App.tsx / To modify CSS properties, edit App.tsx
+# 文件位置 / File location: frontend/src/App.tsx
+```
+
+### 背景样式配置 / Background Style Configuration
+
+在 `frontend/src/App.tsx` 中的 AppContainer 样式：
+Background styles in `frontend/src/App.tsx` AppContainer:
+
+```typescript
+const AppContainer = styled.div`
+  min-height: 100vh;
+  background-image: url('/bg.png');
+  background-size: cover;           // 覆盖整个屏幕 / Cover entire screen
+  background-repeat: no-repeat;     // 不重复 / No repeat
+  background-position: center;      // 居中 / Centered
+  background-attachment: fixed;     // 固定背景 / Fixed background
+  
+  /* 备用颜色 / Fallback color */
+  background-color: #DC143C;
+`;
+```
+
+### 背景图片建议 / Background Image Recommendations
+
+- **格式 / Format**: PNG, JPG (PNG推荐，支持透明度)
+- **尺寸 / Size**: 1920x1080 或更高分辨率
+- **文件大小 / File Size**: 建议小于2MB以提升加载速度
+- **颜色主题 / Color Theme**: 中国红主题配金色元素 / Chinese red with golden elements
+
+### 背景属性说明 / Background Property Options
+
+```css
+/* 不同的背景填充方式 / Different background fill options */
+background-size: cover;      /* 覆盖 - 填满容器 / Cover - fill container */
+background-size: contain;    /* 包含 - 完整显示图片 / Contain - show full image */
+background-size: 100% 100%;  /* 拉伸 - 可能变形 / Stretch - may distort */
+
+/* 背景重复方式 / Background repeat options */
+background-repeat: no-repeat;   /* 不重复 / No repeat */
+background-repeat: repeat;      /* 平铺重复 / Tile repeat */
+background-repeat: repeat-x;    /* 水平重复 / Horizontal repeat */
+background-repeat: repeat-y;    /* 垂直重复 / Vertical repeat */
+```
+
 ## 📚 更多文档 / More Documentation
 
 - `docs/DEVELOPMENT.md` - 开发者指南

@@ -15,59 +15,21 @@ const UserContainer = styled.div`
   gap: 30px;
 `;
 
-const Header = styled.div`
-  text-align: center;
-  color: white;
-  margin-bottom: 20px;
-`;
-
-const Title = styled.h1`
-  font-size: 36px;
-  font-weight: 700;
-  margin: 0 0 10px 0;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-`;
-
-const Subtitle = styled.p`
-  font-size: 18px;
-  opacity: 0.9;
-  margin: 0;
-`;
+// Note: Header components removed as per redesign requirements
 
 const GameArea = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 30px;
+  justify-content: center;
   width: 100%;
-  max-width: 1400px;
-  
-  @media (min-width: 1200px) {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 40px;
-  }
+  min-height: 80vh;
 `;
 
 const WheelSection = styled.div`
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 30px;
-  order: 2;
-  flex-wrap: wrap;
   justify-content: center;
-  
-  @media (min-width: 1200px) {
-    order: 2;
-    flex-wrap: nowrap;
-  }
-  
-  @media (max-width: 1199px) {
-    flex-direction: column;
-    gap: 20px;
-  }
+  align-items: center;
 `;
 
 const WheelWrapper = styled.div`
@@ -77,66 +39,7 @@ const WheelWrapper = styled.div`
   gap: 16px;
 `;
 
-const StatusWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 280px;
-  
-  @media (max-width: 1199px) {
-    width: 100%;
-    max-width: 400px;
-  }
-`;
-
-const GameStatus = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  text-align: center;
-  min-width: 280px;
-`;
-
-const StatusItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 12px 0;
-  font-size: 16px;
-`;
-
-const StatusLabel = styled.span`
-  color: #666;
-  font-weight: 500;
-`;
-
-const StatusValue = styled.span`
-  color: #333;
-  font-weight: 700;
-  font-size: 18px;
-`;
-
-const GameModeIndicator = styled.div<{ $mode: number }>`
-  background: ${props => props.$mode === 1 ? 'linear-gradient(135deg, #667eea, #764ba2)' : 'linear-gradient(135deg, #f093fb, #f5576c)'};
-  color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 16px;
-`;
-
-const SpinInstruction = styled.div`
-  color: white;
-  text-align: center;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 16px 24px;
-  border-radius: 8px;
-  margin-top: 16px;
-  font-size: 16px;
-  font-weight: 500;
-`;
+// Note: Status components removed as per redesign requirements
 
 const ErrorMessage = styled.div`
   background: #ff6b6b;
@@ -156,13 +59,15 @@ const LoadingMessage = styled.div`
 `;
 
 const AnnouncementsSection = styled.div`
-  width: 100%;
-  max-width: 300px;
-  order: 1;
+  position: fixed;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 280px;
+  z-index: 100;
   
-  @media (min-width: 1200px) {
-    order: 1;
-    max-width: 280px;
+  @media (max-width: 1199px) {
+    display: none; /* Hide on smaller screens to avoid overlap */
   }
 `;
 
@@ -527,10 +432,7 @@ const User: React.FC<UserProps> = ({ forcedMode }) => {
     }
   };
 
-  // Get display mode (with forced mode override)
-  const getDisplayMode = (): number => {
-    return forcedMode ?? config?.mode ?? 1;
-  };
+  // Note: Display mode function removed as per redesign requirements
 
   if (loading) {
     return (
@@ -585,11 +487,6 @@ const User: React.FC<UserProps> = ({ forcedMode }) => {
         )}
       </ConnectionStatus>
       
-      <Header>
-        <Title>幸运转盘</Title>
-        <Subtitle>管理员控制抽奖</Subtitle>
-      </Header>
-
       {error && <ErrorMessage>{error}</ErrorMessage>}
 
       <GameArea>
@@ -608,31 +505,6 @@ const User: React.FC<UserProps> = ({ forcedMode }) => {
               disabled={config.remaining_spins <= 0}
             />
           </WheelWrapper>
-          
-          <StatusWrapper>
-            <GameStatus>
-              <GameModeIndicator $mode={getDisplayMode()}>
-                {getDisplayMode() === 1 ? '经典模式' : '固定概率模式'}
-              </GameModeIndicator>
-              
-              <StatusItem>
-                <StatusLabel>当前玩家:</StatusLabel>
-                <StatusValue>{config.current_player}</StatusValue>
-              </StatusItem>
-              
-              <StatusItem>
-                <StatusLabel>剩余次数:</StatusLabel>
-                <StatusValue>{config.remaining_spins}</StatusValue>
-              </StatusItem>
-            </GameStatus>
-
-
-            {config.remaining_spins === 0 && (
-              <SpinInstruction>
-                抽奖次数已用完
-              </SpinInstruction>
-            )}
-          </StatusWrapper>
         </WheelSection>
 
       </GameArea>

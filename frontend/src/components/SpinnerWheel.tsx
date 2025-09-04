@@ -19,6 +19,46 @@ const WheelContainer = styled.div`
   user-select: none;
 `;
 
+const LightStrip = styled.svg`
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 5;
+`;
+
+const LightBulb = styled.circle<{ $delay: number }>`
+  fill: #ffd700;
+  stroke: #ffeb3b;
+  stroke-width: 2;
+  filter: drop-shadow(0 0 8px #ffd700);
+  animation: flicker 2s ease-in-out infinite;
+  animation-delay: ${props => props.$delay}s;
+  
+  @keyframes flicker {
+    0%, 100% { 
+      opacity: 1;
+      fill: #ffd700;
+      filter: drop-shadow(0 0 12px #ffd700);
+    }
+    25% {
+      opacity: 0.3;
+      fill: #ffeb3b;
+      filter: drop-shadow(0 0 4px #ffeb3b);
+    }
+    50% { 
+      opacity: 1;
+      fill: #ff6f00;
+      filter: drop-shadow(0 0 16px #ff6f00);
+    }
+    75% {
+      opacity: 0.6;
+      fill: #ffd700;
+      filter: drop-shadow(0 0 8px #ffd700);
+    }
+  }
+`;
+
 const ArrowOverlay = styled.svg`
   position: absolute;
   top: 0;
@@ -44,8 +84,8 @@ const CenterCircle = styled.circle`
 
 const SegmentPath = styled.path<{ $color: string }>`
   fill: ${props => props.$color};
-  stroke: #fff;
-  stroke-width: 2;
+  stroke: #d0d0d0;
+  stroke-width: 3;
   transition: opacity 0.2s;
   
   &:hover {
@@ -64,11 +104,11 @@ const SegmentText = styled.text`
   filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.7));
 `;
 
-// Improved color palette for segments - more harmonious
+// Color palette optimized for Chinese red background
 const SEGMENT_COLORS = [
-  '#FF6B7A', '#4FD1C7', '#4A90E2', '#7ED321',
-  '#F8C471', '#E17B93', '#50C8C8', '#F5A623',
-  '#BD7EDD', '#5AC8FA', '#FFD93D', '#6CC04A'
+  '#FFD700', '#4FD1C7', '#4A90E2', '#7ED321',
+  '#F8C471', '#FFA500', '#50C8C8', '#F5A623',
+  '#BD7EDD', '#5AC8FA', '#FFEB3B', '#6CC04A'
 ];
 
 const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
@@ -84,9 +124,9 @@ const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
   const animationRef = useRef<number | null>(null);
   const targetRotationRef = useRef(0);
   const animationStartTimeRef = useRef<number | null>(null);
-  const size = 480; // Increased to accommodate golden rings
-  const center = size / 2; // Now 240
-  const radius = 180; // Keep wheel radius same
+  const size = 680; // Enlarged for better visibility  
+  const center = size / 2; // Now 340
+  const radius = 260; // Proportionally increased wheel radius
   const segmentAngle = 360 / 12; // Always 12 segments
   const ANIMATION_DURATION = 6000; // 6 seconds
   
@@ -256,19 +296,29 @@ const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
         <circle 
           cx={center} 
           cy={center} 
-          r={195} 
+          r={275} 
           fill="none" 
           stroke="url(#goldGradient)" 
-          strokeWidth="8" 
+          strokeWidth="10" 
           opacity="0.8"
         />
         <circle 
           cx={center} 
           cy={center} 
-          r={205} 
+          r={285} 
           fill="none" 
           stroke="rgba(255, 255, 255, 0.9)" 
-          strokeWidth="3"
+          strokeWidth="4"
+        />
+        {/* Subtle gray outer rim */}
+        <circle 
+          cx={center} 
+          cy={center} 
+          r={295} 
+          fill="none" 
+          stroke="#c0c0c0" 
+          strokeWidth="2"
+          opacity="0.7"
         />
         
         {/* Gradient definition for golden ring */}
@@ -328,16 +378,41 @@ const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
         <CenterCircle
           cx={center}
           cy={center}
-          r={30}
+          r={40}
         />
         
       </WheelSvg>
+
+      {/* Flickering Light Strip around wheel */}
+      <LightStrip
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+      >
+        {Array.from({ length: 24 }, (_, index) => {
+          const angle = (index * 15) - 90; // 24 lights, 15 degrees apart, starting from top
+          const lightRadius = 310; // Outside the golden rings
+          const angleRad = (angle * Math.PI) / 180;
+          const x = center + lightRadius * Math.cos(angleRad);
+          const y = center + lightRadius * Math.sin(angleRad);
+          
+          return (
+            <LightBulb
+              key={index}
+              cx={x}
+              cy={y}
+              r={8}
+              $delay={index * 0.1} // Stagger the animations
+            />
+          );
+        })}
+      </LightStrip>
       
       {/* Fixed Arrow Overlay - stays at top */}
       <ArrowOverlay
         width={size}
-        height={80}
-        viewBox={`0 0 ${size} 80`}
+        height={100}
+        viewBox={`0 0 ${size} 100`}
       >
         <defs>
           <filter id="arrowShadowFixed">
@@ -346,10 +421,10 @@ const SpinnerWheel: React.FC<SpinnerWheelProps> = ({
         </defs>
         <g filter="url(#arrowShadowFixed)">
           <polygon 
-            points={`${center},65 ${center-15},35 ${center+15},35`}
+            points={`${center},85 ${center-20},45 ${center+20},45`}
             fill="#ff3333"
             stroke="#fff"
-            strokeWidth="2"
+            strokeWidth="3"
           />
         </g>
       </ArrowOverlay>
