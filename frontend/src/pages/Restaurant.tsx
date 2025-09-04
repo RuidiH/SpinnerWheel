@@ -72,7 +72,7 @@ const Header = styled.header`
 `;
 
 const RestaurantName = styled.h1`
-  font-size: 48px;
+  font-size: 52px;
   font-weight: bold;
   margin: 0;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
@@ -96,7 +96,7 @@ const MainContent = styled.div`
 `;
 
 const SectionTitle = styled.h2`
-  font-size: 17px;
+  font-size: 20px;
   font-weight: bold;
   margin: 0 0 8px 0;
   color: white;
@@ -107,12 +107,12 @@ const SectionTitle = styled.h2`
   &::before {
     content: '📍';
     margin-right: 5px;
-    font-size: 13px;
+    font-size: 16px;
   }
 `;
 
 const CompactSectionTitle = styled.h3`
-  font-size: 15px;
+  font-size: 18px;
   font-weight: bold;
   margin: 0 0 5px 0;
   color: white;
@@ -128,7 +128,7 @@ const CompactSectionTitle = styled.h3`
 `;
 
 const AdvertisementSection = styled.div`
-  width: 70%;
+  width: 30%;
   display: flex;
   flex-direction: column;
 `;
@@ -142,7 +142,7 @@ const AdvertisementArea = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 600px;
+  min-height: 400px;
   flex: 1;
   overflow: hidden;
   position: relative;
@@ -156,14 +156,16 @@ const AdvertisementImage = styled.img`
 `;
 
 const NoAdvertisementText = styled.div`
-  font-size: 36px;
+  font-size: 24px;
   font-weight: bold;
   color: rgba(255, 255, 255, 0.6);
   text-align: center;
+  padding: 20px;
+  line-height: 1.4;
 `;
 
-const RightSidebar = styled.div`
-  width: 30%;
+const MenuSection = styled.div`
+  width: 70%;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -207,7 +209,7 @@ const MenuRow = styled.div<{ $isLast?: boolean }>`
 const MenuItemName = styled.span`
   font-weight: 500;
   color: #ffffff;
-  font-size: 15px;
+  font-size: 18px;
   flex: 1;
   line-height: 1.3;
 `;
@@ -215,7 +217,7 @@ const MenuItemName = styled.span`
 const MenuItemPrice = styled.span`
   color: #FFD700;
   font-weight: bold;
-  font-size: 15px;
+  font-size: 18px;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   line-height: 1.3;
 `;
@@ -252,14 +254,14 @@ const RecommendationItem = styled.div<{ $isLast?: boolean }>`
 
 const RecommendationName = styled.span`
   font-weight: 500;
-  font-size: 15px;
+  font-size: 19px;
   color: #ffffff;
   line-height: 1.3;
 `;
 
 const RecommendationPrice = styled.span`
   font-weight: bold;
-  font-size: 15px;
+  font-size: 19px;
   color: #FFD700;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   line-height: 1.3;
@@ -536,6 +538,72 @@ const Restaurant: React.FC = () => {
       </Header>
 
       <MainContent>
+        <MenuSection>
+          {/* Recommendations Section - Minimal wrapper, only show if there are recommendations */}
+          {activeRecommendations.length > 0 && (
+            <RecommendationSection>
+              <CompactSectionTitle>今日推荐</CompactSectionTitle>
+              <RecommendationColumns>
+                <RecommendationColumn>
+                  {activeRecommendations.slice(0, Math.ceil(activeRecommendations.length / 3)).map((rec, index, arr) => (
+                    <RecommendationItem key={rec.id} $isLast={index === arr.length - 1}>
+                      <RecommendationName>{rec.name}</RecommendationName>
+                      <RecommendationPrice>¥{rec.price.toFixed(2)}</RecommendationPrice>
+                    </RecommendationItem>
+                  ))}
+                </RecommendationColumn>
+                <RecommendationColumn>
+                  {activeRecommendations.slice(Math.ceil(activeRecommendations.length / 3), Math.ceil(activeRecommendations.length * 2 / 3)).map((rec, index, arr) => (
+                    <RecommendationItem key={rec.id} $isLast={index === arr.length - 1}>
+                      <RecommendationName>{rec.name}</RecommendationName>
+                      <RecommendationPrice>¥{rec.price.toFixed(2)}</RecommendationPrice>
+                    </RecommendationItem>
+                  ))}
+                </RecommendationColumn>
+                <RecommendationColumn>
+                  {activeRecommendations.slice(Math.ceil(activeRecommendations.length * 2 / 3)).map((rec, index, arr) => (
+                    <RecommendationItem key={rec.id} $isLast={index === arr.length - 1}>
+                      <RecommendationName>{rec.name}</RecommendationName>
+                      <RecommendationPrice>¥{rec.price.toFixed(2)}</RecommendationPrice>
+                    </RecommendationItem>
+                  ))}
+                </RecommendationColumn>
+              </RecommendationColumns>
+            </RecommendationSection>
+          )}
+
+          {/* Menu Section */}
+          <MenuArea>
+            <SectionTitle>菜单</SectionTitle>
+            <MenuColumns>
+              <MenuColumn>
+                {getMenuItemsWithDefaults().slice(0, 10).map((item, index) => (
+                  <MenuRow key={item.id} $isLast={index === 9}>
+                    <MenuItemName>{item.name}</MenuItemName>
+                    <MenuItemPrice>¥{item.price.toFixed(2)}</MenuItemPrice>
+                  </MenuRow>
+                ))}
+              </MenuColumn>
+              <MenuColumn>
+                {getMenuItemsWithDefaults().slice(10, 20).map((item, index) => (
+                  <MenuRow key={item.id} $isLast={index === 9}>
+                    <MenuItemName>{item.name}</MenuItemName>
+                    <MenuItemPrice>¥{item.price.toFixed(2)}</MenuItemPrice>
+                  </MenuRow>
+                ))}
+              </MenuColumn>
+              <MenuColumn>
+                {getMenuItemsWithDefaults().slice(20, 30).map((item, index) => (
+                  <MenuRow key={item.id} $isLast={index === 9}>
+                    <MenuItemName>{item.name}</MenuItemName>
+                    <MenuItemPrice>¥{item.price.toFixed(2)}</MenuItemPrice>
+                  </MenuRow>
+                ))}
+              </MenuColumn>
+            </MenuColumns>
+          </MenuArea>
+        </MenuSection>
+
         <AdvertisementSection>
           <AdvertisementArea>
             {currentAd ? (
@@ -565,56 +633,6 @@ const Restaurant: React.FC = () => {
             )}
           </AdvertisementArea>
         </AdvertisementSection>
-
-        <RightSidebar>
-          {/* Recommendations Section - Minimal wrapper, only show if there are recommendations */}
-          {activeRecommendations.length > 0 && (
-            <RecommendationSection>
-              <CompactSectionTitle>今日推荐</CompactSectionTitle>
-              <RecommendationColumns>
-                <RecommendationColumn>
-                  {activeRecommendations.slice(0, Math.ceil(activeRecommendations.length / 2)).map((rec, index, arr) => (
-                    <RecommendationItem key={rec.id} $isLast={index === arr.length - 1}>
-                      <RecommendationName>{rec.name}</RecommendationName>
-                      <RecommendationPrice>¥{rec.price.toFixed(2)}</RecommendationPrice>
-                    </RecommendationItem>
-                  ))}
-                </RecommendationColumn>
-                <RecommendationColumn>
-                  {activeRecommendations.slice(Math.ceil(activeRecommendations.length / 2)).map((rec, index, arr) => (
-                    <RecommendationItem key={rec.id} $isLast={index === arr.length - 1}>
-                      <RecommendationName>{rec.name}</RecommendationName>
-                      <RecommendationPrice>¥{rec.price.toFixed(2)}</RecommendationPrice>
-                    </RecommendationItem>
-                  ))}
-                </RecommendationColumn>
-              </RecommendationColumns>
-            </RecommendationSection>
-          )}
-
-          {/* Menu Section */}
-          <MenuArea>
-            <SectionTitle>菜单</SectionTitle>
-            <MenuColumns>
-              <MenuColumn>
-                {getMenuItemsWithDefaults().slice(0, 15).map((item, index) => (
-                  <MenuRow key={item.id} $isLast={index === 14}>
-                    <MenuItemName>{item.name}</MenuItemName>
-                    <MenuItemPrice>¥{item.price.toFixed(2)}</MenuItemPrice>
-                  </MenuRow>
-                ))}
-              </MenuColumn>
-              <MenuColumn>
-                {getMenuItemsWithDefaults().slice(15, 30).map((item, index) => (
-                  <MenuRow key={item.id} $isLast={index === 14}>
-                    <MenuItemName>{item.name}</MenuItemName>
-                    <MenuItemPrice>¥{item.price.toFixed(2)}</MenuItemPrice>
-                  </MenuRow>
-                ))}
-              </MenuColumn>
-            </MenuColumns>
-          </MenuArea>
-        </RightSidebar>
       </MainContent>
     </RestaurantContainer>
   );

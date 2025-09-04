@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import styled from 'styled-components';
 import Admin from './pages/Admin';
 import Display from './components/Display';
+import Restaurant from './pages/Restaurant';
 import './App.css';
 
 const AppContainer = styled.div`
@@ -37,6 +38,7 @@ function App() {
             <Route path="/" element={<Navigate to="/user" replace />} />
             <Route path="/user" element={<Display />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/restaurant" element={<Restaurant />} />
             <Route path="*" element={<Navigate to="/user" replace />} />
           </Routes>
         </Router>

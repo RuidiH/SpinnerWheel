@@ -208,6 +208,7 @@ func main() {
 		r.StaticFile("/", filepath.Join(staticPath, "index.html"))
 		r.StaticFile("/user", filepath.Join(staticPath, "index.html"))
 		r.StaticFile("/admin", filepath.Join(staticPath, "index.html"))
+		r.StaticFile("/restaurant", filepath.Join(staticPath, "index.html"))
 	} else {
 		fmt.Println("开发模式: 使用HTML模板")
 		// Development mode - serve simple placeholder pages
