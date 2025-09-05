@@ -209,7 +209,7 @@ const MenuRow = styled.div<{ $isLast?: boolean }>`
 const MenuItemName = styled.span`
   font-weight: 500;
   color: #ffffff;
-  font-size: 18px;
+  font-size: 24px;
   flex: 1;
   line-height: 1.3;
 `;
@@ -217,7 +217,7 @@ const MenuItemName = styled.span`
 const MenuItemPrice = styled.span`
   color: #FFD700;
   font-weight: bold;
-  font-size: 18px;
+  font-size: 24px;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   line-height: 1.3;
 `;
@@ -254,14 +254,14 @@ const RecommendationItem = styled.div<{ $isLast?: boolean }>`
 
 const RecommendationName = styled.span`
   font-weight: 500;
-  font-size: 19px;
+  font-size: 25px;
   color: #ffffff;
   line-height: 1.3;
 `;
 
 const RecommendationPrice = styled.span`
   font-weight: bold;
-  font-size: 19px;
+  font-size: 25px;
   color: #FFD700;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   line-height: 1.3;
