@@ -228,14 +228,9 @@ const User: React.FC<UserProps> = ({ forcedMode }) => {
           console.error('Failed to reload history:', err);
         }
         
-        // Calculate correct prize text
-        const frontendPrize = getCorrectPrizeText(result.index, result.mode);
-        let finalPrize = frontendPrize;
-        if (!frontendPrize || frontendPrize === '奖品' || frontendPrize === '再接再厉') {
-          if (result.prize && result.prize.trim()) {
-            finalPrize = result.prize;
-          }
-        }
+        // Use backend's prize text directly - it's authoritative and up-to-date
+        // This fixes the issue where frontend config might be stale during config updates
+        const finalPrize = result.prize && result.prize.trim() ? result.prize : getCorrectPrizeText(result.index, result.mode);
         
         const correctedResult = {
           ...result,
